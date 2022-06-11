@@ -12,6 +12,8 @@ function printMessage(){
   echo ""
 }
 
+export MAVEN_OPTS="-Xmx4096m"
+
 snapshot_tag="-SNAPSHOT"
 
 resources_directory=${PWD##*/}
