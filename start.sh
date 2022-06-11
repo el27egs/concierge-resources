@@ -39,8 +39,8 @@ do
     
     tmp_pom_file=${entry}/${suffix}-pom.xml.tmp
     cp ${entry}/pom.xml ${tmp_pom_file}
-    mvn -f ${tmp_pom_file} -U -DgenerateBackupPoms=false versions:set -DnewVersion=${temporal_version}
-    mvn -f ${tmp_pom_file} clean package -Dmaven.test.skip=true
+    mvn -T 1C -f ${tmp_pom_file} -U -DgenerateBackupPoms=false versions:set -DnewVersion=${temporal_version}
+    mvn -T 1C -f ${tmp_pom_file} clean package -Dmaven.test.skip=true
     rm ${tmp_pom_file}
     
     tmp_dockerfile=${entry}/${suffix}-Dockerfile.tmp
@@ -51,6 +51,14 @@ do
     eval $docker_build_cmd
     rm ${tmp_dockerfile}    
 
+    replace_args_cmd="\"s/$artifact_id[:]*[0-9.-]*/$artifact_id:${temporal_version}/g\""
+    replace_args_cmd="sed -i -e ${replace_args_cmd} docker-compose.yml"
+    eval $replace_args_cmd
+
   fi
 done
+
+
+docker_compose_up_cmd="docker-compose up"
+eval $docker_compose_up_cmd
 
