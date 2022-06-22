@@ -4,4 +4,8 @@ linea 2
 linea 3
 =======
 linea 4
+<<<<<<< HEAD
 >>>>>>> a557d01... Creando archivo file.txt
+=======
+>>>>>>> a557d01275a05067658b367f4dd921d7b4272eb5
+>>>>>>> fd4e7fcbaa46fe2844972cf815b91ff5f65d8d60
