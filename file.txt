@@ -1,0 +1,7 @@
+linea 1
+linea 2
+<<<<<<< HEAD
+linea 3
+=======
+linea 4
+>>>>>>> a557d01... Creando archivo file.txt
