@@ -1,3 +1,7 @@
 linea 1
 linea 2
+<<<<<<< HEAD
 linea 3
+=======
+linea 4
+>>>>>>> a557d01275a05067658b367f4dd921d7b4272eb5
