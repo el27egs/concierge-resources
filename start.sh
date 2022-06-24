@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+declare -a array=("concierge-api-gateway" "concierge-debit-accounts" "concierge-discovery-service" "concierge-user-management")
+
 function printMessage(){
   blue=`tput setaf 4`
   green=`tput setaf 2`
@@ -26,38 +28,43 @@ suffix=`date "+%Y%m%d-%H%M%S"`
 for entry in "$search_dir"/*
 do
   is_snapshot=false
-  if [[ $entry == *${resources_directory} ]]; then
-    echo "skipping $entry"
-  else
-    temporal_version=$(mvn -f ${entry} -q -U -Dexpression=project.version -DforceStdout help:evaluate)
-    artifact_id=$(mvn -f ${entry} -q -U -Dexpression=project.artifactId -DforceStdout help:evaluate)
-    original_version=$(mvn -f ${entry} -q -U -Dexpression=project.version -DforceStdout help:evaluate)
-    if [[ $temporal_version == *${snapshot_tag} ]]; then
-      temporal_version=${temporal_version/${snapshot_tag}/""}
-      is_snapshot=true
-    fi    
+  
+  for validDir in "${array[@]}"
+  do
     
-    temporal_version="$temporal_version-$suffix"
+    if [[ ${entry##*/} == $validDir ]]; then
+      
+      temporal_version=$(mvn -f ${entry} -q -U -Dexpression=project.version -DforceStdout help:evaluate)
+      artifact_id=$(mvn -f ${entry} -q -U -Dexpression=project.artifactId -DforceStdout help:evaluate)
+      original_version=$(mvn -f ${entry} -q -U -Dexpression=project.version -DforceStdout help:evaluate)
     
-    tmp_pom_file=${entry}/${suffix}-pom.xml.tmp
-    cp ${entry}/pom.xml ${tmp_pom_file}
-    mvn -T 1C -f ${tmp_pom_file} -U -DgenerateBackupPoms=false versions:set -DnewVersion=${temporal_version}
-    mvn -T 1C -f ${tmp_pom_file} clean package -Dmaven.test.skip=true
-    rm ${tmp_pom_file}
+      if [[ $temporal_version == *${snapshot_tag} ]]; then
+        temporal_version=${temporal_version/${snapshot_tag}/""}
+        is_snapshot=true
+      fi    
     
-    tmp_dockerfile=${entry}/${suffix}-Dockerfile.tmp
-    cp ${entry}/Dockerfile ${tmp_dockerfile}
-    replace_args_cmd="s/app.jar/$temporal_version-app.jar/g"
-    sed -i ${replace_args_cmd} ${tmp_dockerfile}
-    docker_build_cmd="docker build -t ngineapps/$artifact_id:$temporal_version $entry -f $entry/$tmp_dockerfile"
-    eval $docker_build_cmd
-    rm ${tmp_dockerfile}    
-
-    replace_args_cmd="\"s/$artifact_id[:]*[0-9.-]*/$artifact_id:${temporal_version}/g\""
-    replace_args_cmd="sed -i -e ${replace_args_cmd} docker-compose.yml"
-    eval $replace_args_cmd
-
-  fi
+      temporal_version="$temporal_version-$suffix"
+    
+      tmp_pom_file=${entry}/${suffix}-pom.xml.tmp
+      cp ${entry}/pom.xml ${tmp_pom_file}
+      mvn -T 1C -f ${tmp_pom_file} -U -DgenerateBackupPoms=false versions:set -DnewVersion=${temporal_version}
+      mvn -T 1C -f ${tmp_pom_file} clean package -Dmaven.test.skip=true
+      rm ${tmp_pom_file}
+    
+      tmp_dockerfile=${entry}/${suffix}-Dockerfile.tmp
+      cp ${entry}/Dockerfile ${tmp_dockerfile}
+      replace_args_cmd="s/app.jar/$temporal_version-app.jar/g"
+      sed -i ${replace_args_cmd} ${tmp_dockerfile}
+      docker_build_cmd="docker build -t ngineapps/$artifact_id:$temporal_version $entry -f $entry/$tmp_dockerfile"
+      eval $docker_build_cmd
+      rm ${tmp_dockerfile}    
+      
+      replace_args_cmd="\"s/$artifact_id[:]*[0-9.-]*/$artifact_id:${temporal_version}/g\""
+      replace_args_cmd="sed -i -e ${replace_args_cmd} docker-compose.yml"
+      eval $replace_args_cmd
+      break
+    fi
+  done
 done
 
 
