@@ -23,12 +23,12 @@ services:
     - ./concierge-realm.json:/home/concierge-realm.json
 
   discovery-server:
-    image: ngineapps/concierge-discovery-service:0.0.1-20220626-154648
+    image: ngineapps/concierge-discovery-service:0.0.1-20220630-104752
     ports:
     - "8018:8018"
 
   gateway-server:
-    image: ngineapps/concierge-api-gateway:0.0.1-20220626-154648
+    image: ngineapps/concierge-api-gateway:0.0.1-20220630-104752
     environment:
     - DEFAULT_ZONE=http://discovery-server:8018/eureka/
     ports:
@@ -37,7 +37,7 @@ services:
     - discovery-server
 
   debit-accounts:
-    image: ngineapps/concierge-debit-accounts:0.0.1-20220626-154648
+    image: ngineapps/concierge-debit-accounts:0.0.1-20220630-104752
     environment:
     - DEBIT_ACCOUNTS_DB_USER=postgres
     - DEBIT_ACCOUNTS_DB_PASSWORD=postgres
@@ -61,7 +61,7 @@ services:
       start_period: 10s
 
   user-management:
-    image: ngineapps/concierge-user-management:0.0.1-20220626-154648
+    image: ngineapps/concierge-user-management:0.0.1-20220630-104752
     environment:
     - USER_MANAGEMENT_DB_USER=postgres
     - USER_MANAGEMENT_DB_PASSWORD=postgres
