@@ -1,10 +1,10 @@
 variable "default_tags" {
   description = "Default tags to add to all resources created inside of this module"
   type        = map(string)
-  default = {
+  default     = {
     module_name    = "aws_network_stack"
     cloud_provider = "AWS"
-    iac_tool       = "terraform"
+    iac_tool       = "Terraform"
   }
 }
 
@@ -17,7 +17,7 @@ variable "app_name" {
 variable "environment" {
   description = "Environment name to use the resources"
   type        = string
-  default     = "dev"
+  default     = "Dev"
 }
 
 variable "vpc_cidr_block" {
@@ -53,11 +53,15 @@ locals {
     }
   }
 
-  vpc_full_name                = "${var.app_name}-vpc-${var.environment}"
-  subnet_one_full_name         = "${var.app_name}-subnet_one-${var.environment}"
-  subnet_two_full_name         = "${var.app_name}-subnet_two-${var.environment}"
-  internet_gw_full_name        = "${var.app_name}-internet_gw-${var.environment}"
-  public_route_table_full_name = "${var.app_name}-public_route_table-${var.environment}"
-  ecs_cluster_full_name        = "${var.app_name}-ecs_cluster-${var.environment}"
+  vpc_full_name                     = "${var.app_name}-VPC-${var.environment}"
+  subnet_one_full_name              = "${var.app_name}-SubnetOne-${var.environment}"
+  subnet_two_full_name              = "${var.app_name}-SubnetTwo-${var.environment}"
+  internet_gw_full_name             = "${var.app_name}-Internet_GW-${var.environment}"
+  public_route_table_full_name      = "${var.app_name}-PublicRouteTable-${var.environment}"
+  ecs_cluster_full_name             = "${var.app_name}-ECSCluster-${var.environment}"
+  ecs_role_full_name                = "${var.app_name}-ECSRole-${var.environment}"
+  ecs_task_execution_role_full_name = "${var.app_name}-ECSTaskExecutionRole-${var.environment}"
+  sg_lb_full_name                   = "${var.app_name}-SG_LoadBalancer-${var.environment}"
+  sg_fargate_instances_full_name    = "${var.app_name}-SG_FargateInstances-${var.environment}"
 
 }
