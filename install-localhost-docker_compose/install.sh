@@ -21,7 +21,7 @@ snapshot_tag="-SNAPSHOT"
 resources_directory=${PWD##*/}
 resources_directory=${resources_directory:-/} 
 
-search_dir=/home/emmanuel/JavaDevelopment/concierge
+search_dir=../..
 
 suffix=`date "+%Y%m%d-%H%M%S"`
 
@@ -69,7 +69,7 @@ do
             break
 
       else
-            temporal_version="1.0.0-$suffix"
+            temporal_version="0.0.1-$suffix"
 
             tmp_dockerfile=${entry}/${suffix}-Dockerfile.tmp
             cp ${entry}/Dockerfile ${tmp_dockerfile}
