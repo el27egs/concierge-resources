@@ -72,7 +72,7 @@ services:
       - DISCOVERY_ENDPOINT=http://discovery-server:8018/eureka/
       - GATEWAY_URL=http://gateway-server:8008
       - ISSUER_URI=http://auth-server:8080/auth/realms/concierge
-      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=5001:,server=y,suspend=n
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=5001,server=y,suspend=n
     depends_on:
       - auth-server
       - db-server
