@@ -63,5 +63,8 @@ locals {
   ecs_task_execution_role_full_name = "${var.app_name}-ECSTaskExecutionRole-${var.environment}"
   sg_lb_full_name                   = "${var.app_name}-SG_LoadBalancer-${var.environment}"
   sg_fargate_instances_full_name    = "${var.app_name}-SG_FargateInstances-${var.environment}"
+  load_balancer_full_name           = "${var.app_name}-LoadBalancer-${var.environment}"
+  default_target_group_full_name    = "${var.app_name}-TargetGroup-${var.environment}"
+  default_lb_listener_full_name     = "${var.app_name}-LB_Listener-${var.environment}"
 
 }

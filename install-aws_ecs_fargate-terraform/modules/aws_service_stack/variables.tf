@@ -21,7 +21,8 @@ variable "environment" {
 }
 
 variable "ecs_role" {
-  description = "The ARN of the ECS role"
+  description = "The ARN of the ECS role, default to an empty string"
+  default     = ""
 }
 
 variable "ecs_task_execution_role" {
@@ -30,4 +31,24 @@ variable "ecs_task_execution_role" {
 
 variable "vpc_id" {
   description = "The ID of the vpc that this stack is deployed on"
+}
+
+variable "public_listener" {
+  description = "The ARN of the public lister of load balancer"
+}
+
+variable "cluster_name" {
+  description = "The name of the ECS cluster"
+}
+
+variable "public_subnet_one" {
+  description = "Public subnet one"
+}
+
+variable "public_subnet_two" {
+  description = "Public subnet two"
+}
+
+variable "fargate_instances_security_group" {
+  description = "A security group used to allow Fargate containers to receive traffic"
 }
