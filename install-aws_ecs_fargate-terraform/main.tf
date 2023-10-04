@@ -1,13 +1,14 @@
 module "aws_network_stack" {
   source   = "./modules/aws_network_stack"
-  app_name = "ConciergeApp"
+  app_name = "conciergeapp"
 }
 
-module "aws_service_stack" {
-  source = "./modules/aws_service_stack"
+module "aws_conciergeapp_stack" {
+  source = "./modules/aws_conciergeapp_stack"
 
   depends_on = [module.aws_network_stack]
 
+  #  ecs_role                = module.aws_network_stack.ecs_task_execution_role
   ecs_task_execution_role = module.aws_network_stack.ecs_task_execution_role
 
   vpc_id            = module.aws_network_stack.vpc_id

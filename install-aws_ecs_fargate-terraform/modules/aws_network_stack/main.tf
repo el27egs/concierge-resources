@@ -2,8 +2,6 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-data "aws_region" "current" {}
-
 resource "aws_vpc" "fargate_vpc" {
   enable_dns_support   = true
   enable_dns_hostnames = true
@@ -166,12 +164,12 @@ resource "aws_iam_role" "ecs_role" {
   name = local.ecs_role_full_name
 
   assume_role_policy = jsonencode({
-    Version   = "2008-10-17"
+    Version = "2008-10-17"
     Statement = [
       {
-        Action    = ["sts:AssumeRole"]
-        Effect    = "Allow"
-        Sid       = ""
+        Action = ["sts:AssumeRole"]
+        Effect = "Allow"
+        Sid    = ""
         Principal = {
           Service = ["ecs.amazonaws.com"]
         }
@@ -205,12 +203,12 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   name = local.ecs_task_execution_role_full_name
 
   assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
+    Version = "2012-10-17"
     Statement = [
       {
-        Action    = ["sts:AssumeRole"]
-        Effect    = "Allow"
-        Sid       = ""
+        Action = ["sts:AssumeRole"]
+        Effect = "Allow"
+        Sid    = ""
         Principal = {
           Service = ["ecs-tasks.amazonaws.com"]
         }
@@ -233,11 +231,12 @@ resource "aws_iam_role" "ecs_task_execution_role" {
 variable "task_execution_role_policies" {
   description = "Policies"
   type        = set(string)
-  default     = [
+  default = [
     "AmazonECSTaskExecutionRolePolicy",
     "AWSAppMeshEnvoyAccess",
     "AWSXRayDaemonWriteAccess",
-    "CloudWatchFullAccess"
+    "CloudWatchFullAccess",
+    "CloudWatchLogsFullAccess"
   ]
 }
 
@@ -331,6 +330,23 @@ resource "aws_vpc_security_group_ingress_rule" "ingress_traffic_from_self_sg_ing
   )
 }
 
+resource "aws_vpc_security_group_ingress_rule" "ingress_traffic_for_admin_ingress_rule" {
+  security_group_id = aws_security_group.fargate_instances_security_group.id
+
+  from_port   = 8080
+  to_port     = 8080
+  ip_protocol = "tcp"
+  cidr_ipv4   = "0.0.0.0/0"
+
+  tags = merge(
+    { environment = var.environment },
+    { app_name = var.app_name },
+
+    var.default_tags
+  )
+}
+
+
 resource "aws_vpc_security_group_egress_rule" "public_traffic_egress_rule" {
   security_group_id = aws_security_group.fargate_instances_security_group.id
 
@@ -398,4 +414,20 @@ resource "aws_lb_listener" "default_lb_listener" {
 
     var.default_tags
   )
+}
+
+data "aws_route53_zone" "hosted_zone" {
+  name = "starlingapps.com"
+}
+
+resource "aws_route53_record" "auth_server_record" {
+  zone_id = data.aws_route53_zone.hosted_zone.zone_id
+  name    = "auth-server.${data.aws_route53_zone.hosted_zone.name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.public_load_balancer.dns_name
+    zone_id                = aws_lb.public_load_balancer.zone_id
+    evaluate_target_health = true
+  }
 }

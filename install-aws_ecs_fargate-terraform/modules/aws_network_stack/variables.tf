@@ -1,7 +1,7 @@
 variable "default_tags" {
   description = "Default tags to add to all resources created inside of this module"
   type        = map(string)
-  default     = {
+  default = {
     module_name    = "aws_network_stack"
     cloud_provider = "AWS"
     iac_tool       = "Terraform"
