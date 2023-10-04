@@ -1,3 +1,5 @@
+data "aws_region" "current_region" {}
+
 data "aws_availability_zones" "available" {
   state = "available"
 }
@@ -164,12 +166,12 @@ resource "aws_iam_role" "ecs_role" {
   name = local.ecs_role_full_name
 
   assume_role_policy = jsonencode({
-    Version = "2008-10-17"
+    Version   = "2008-10-17"
     Statement = [
       {
-        Action = ["sts:AssumeRole"]
-        Effect = "Allow"
-        Sid    = ""
+        Action    = ["sts:AssumeRole"]
+        Effect    = "Allow"
+        Sid       = ""
         Principal = {
           Service = ["ecs.amazonaws.com"]
         }
@@ -203,12 +205,12 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   name = local.ecs_task_execution_role_full_name
 
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+    Version   = "2012-10-17"
     Statement = [
       {
-        Action = ["sts:AssumeRole"]
-        Effect = "Allow"
-        Sid    = ""
+        Action    = ["sts:AssumeRole"]
+        Effect    = "Allow"
+        Sid       = ""
         Principal = {
           Service = ["ecs-tasks.amazonaws.com"]
         }
@@ -231,7 +233,7 @@ resource "aws_iam_role" "ecs_task_execution_role" {
 variable "task_execution_role_policies" {
   description = "Policies"
   type        = set(string)
-  default = [
+  default     = [
     "AmazonECSTaskExecutionRolePolicy",
     "AWSAppMeshEnvoyAccess",
     "AWSXRayDaemonWriteAccess",

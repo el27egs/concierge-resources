@@ -1,3 +1,8 @@
+output "region_name" {
+  description = "Current region name to deploy network stack"
+  value       = data.aws_region.current_region.name
+}
+
 output "vpc_id" {
   description = "The ID of the vpc that this stack is deployed on"
   value       = aws_vpc.fargate_vpc.id

@@ -1,7 +1,7 @@
 variable "default_tags" {
   description = "Default tags to add to all resources created inside of this module"
   type        = map(string)
-  default = {
+  default     = {
     module_name    = "aws_network_stack"
     cloud_provider = "AWS"
     iac_tool       = "Terraform"
@@ -64,7 +64,7 @@ locals {
   sg_lb_full_name                   = "${var.app_name}-SG_LoadBalancer-${var.environment}"
   sg_fargate_instances_full_name    = "${var.app_name}-SG_FargateInstances-${var.environment}"
   load_balancer_full_name           = "${var.app_name}-LoadBalancer-${var.environment}"
-  default_target_group_full_name    = "${var.app_name}-TargetGroup-${var.environment}"
+  default_target_group_full_name    = lower("${var.app_name}-target-group-${var.environment}")
   default_lb_listener_full_name     = "${var.app_name}-LB_Listener-${var.environment}"
 
 }

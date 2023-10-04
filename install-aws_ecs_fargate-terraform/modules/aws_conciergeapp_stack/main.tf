@@ -1,7 +1,5 @@
-data aws_region "current_region" {}
-
 resource "aws_cloudwatch_log_group" "log_group" {
-  name = "/ecs/fargate/conciergeapp"
+  name = "/ecs/fargate/${var.app_name}"
 
   tags = merge(
     { environment = var.environment },
@@ -14,11 +12,11 @@ resource "aws_cloudwatch_log_group" "log_group" {
 
 resource "aws_ecs_task_definition" "auth_server_task_definition" {
 
-  depends_on = [data.aws_region.current_region, aws_cloudwatch_log_group.log_group]
+  depends_on = [aws_cloudwatch_log_group.log_group]
 
-  family       = "auth_server_task_def"
-  cpu          = "1024"
-  memory       = "2048"
+  family       = local.auth_server_task_def_name
+  cpu          = var.auth_server_cpu
+  memory       = var.auth_server_memory
   network_mode = "awsvpc"
 
   requires_compatibilities = ["FARGATE"]
@@ -28,22 +26,22 @@ resource "aws_ecs_task_definition" "auth_server_task_definition" {
 
   container_definitions = jsonencode([
     {
-      name         = "auth_server"
-      image        = "391361142564.dkr.ecr.us-east-1.amazonaws.com/concierge-auth-server:1.0.1"
-      cpu          = 1024
-      memory       = 2048
+      name         = var.auth_server_name
+      image        = var.auth_server_image_url
+      cpu          = var.auth_server_cpu
+      memory       = var.auth_server_memory
       essential    = true
       portMappings = [
         {
-          containerPort : 8080
-          hostPort : 8080
+          containerPort : var.auth_server_port
+          hostPort : var.auth_server_port
         }
       ],
       logConfiguration = {
         logDriver = "awslogs"
         options   = {
           "awslogs-group"         = aws_cloudwatch_log_group.log_group.name
-          "awslogs-region"        = data.aws_region.current_region.name
+          "awslogs-region"        = var.region_name
           "awslogs-stream-prefix" = "service"
         }
       }
@@ -60,16 +58,16 @@ resource "aws_ecs_task_definition" "auth_server_task_definition" {
 }
 
 resource "aws_lb_target_group" "auth_server_target_group" {
-  name        = "auth-server-target-group"
-  port        = 8080
-  protocol    = "HTTP"
+  name        = local.auth_server_target_group_name
+  port        = var.auth_server_port
+  protocol    = var.auth_server_protocol
   vpc_id      = var.vpc_id
   target_type = "ip"
 
   health_check {
-    interval            = 60
-    path                = "/auth/realms/concierge/"
-    protocol            = "HTTP"
+    interval            = var.auth_server_health_interval
+    path                = var.auth_server_health_path
+    protocol            = var.auth_server_health_protocol
     timeout             = 5
     healthy_threshold   = 2
     unhealthy_threshold = 2
@@ -81,12 +79,13 @@ resource "aws_lb_target_group" "auth_server_target_group" {
 
     var.default_tags
   )
+
 }
 
 resource "aws_lb_listener_rule" "auth_server_listener_rule" {
 
   listener_arn = var.public_listener
-  priority     = 1
+  priority     = var.auth_server_rule_priority
 
   action {
     type             = "forward"
@@ -95,7 +94,7 @@ resource "aws_lb_listener_rule" "auth_server_listener_rule" {
 
   condition {
     path_pattern {
-      values = ["/auth/*"]
+      values = [var.auth_server_path_pattern]
     }
   }
 
@@ -105,20 +104,24 @@ resource "aws_lb_listener_rule" "auth_server_listener_rule" {
 
     var.default_tags
   )
+
 }
 
 resource "aws_ecs_service" "auth_server_ecs_service" {
 
   depends_on = [aws_lb_listener_rule.auth_server_listener_rule]
 
-  name        = "auth_server_svc"
-  cluster     = var.cluster_name
-  launch_type = "FARGATE"
+  name    = local.auth_server_service_name
+  cluster = var.cluster_name
 
+  launch_type         = "FARGATE"
+  scheduling_strategy = "REPLICA"
+
+  health_check_grace_period_seconds  = 60
   deployment_maximum_percent         = 200
-  deployment_minimum_healthy_percent = 75
+  deployment_minimum_healthy_percent = 50
 
-  desired_count        = 1
+  desired_count        = var.auth_server_desired_count
   force_new_deployment = true
 
   network_configuration {
@@ -131,8 +134,8 @@ resource "aws_ecs_service" "auth_server_ecs_service" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.auth_server_target_group.arn
-    container_name   = "auth_server"
-    container_port   = 8080
+    container_name   = var.auth_server_name
+    container_port   = var.auth_server_port
   }
 
   tags = merge(
@@ -141,4 +144,5 @@ resource "aws_ecs_service" "auth_server_ecs_service" {
 
     var.default_tags
   )
+
 }
