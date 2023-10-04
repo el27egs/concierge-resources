@@ -1,6 +1,6 @@
 module "aws_network_stack" {
   source   = "./modules/aws_network_stack"
-  app_name = "conciergeapp"
+  app_name = "ConciergeApp"
 }
 
 module "aws_conciergeapp_stack" {

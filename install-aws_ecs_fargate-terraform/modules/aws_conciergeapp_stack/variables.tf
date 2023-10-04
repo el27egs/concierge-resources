@@ -139,4 +139,42 @@ locals {
   auth_server_task_def_name     = "${var.auth_server_name}_task_def"
   auth_server_service_name      = "${var.auth_server_name}_service"
   auth_server_target_group_name = "${replace(var.auth_server_name, "_", "-")}-target-group"
+
+  services = {
+    auth_server = {
+      task_definition = {
+        family        = local.auth_server_task_def_name
+        cpu           = var.auth_server_cpu
+        memory        = var.auth_server_memory
+        name          = var.auth_server_name
+        image         = var.auth_server_image_url
+        containerPort = var.auth_server_port
+        hostPort      = var.auth_server_port
+
+      }
+      target_group = {
+        name     = local.auth_server_target_group_name
+        port     = var.auth_server_port
+        protocol = var.auth_server_protocol
+      }
+      health_check = {
+        interval = var.auth_server_health_interval
+        path     = var.auth_server_health_path
+        protocol = var.auth_server_health_protocol
+      }
+      listener_rule = {
+        priority = var.auth_server_rule_priority
+        values   = [var.auth_server_path_pattern]
+      }
+      ecs_service = {
+        name          = local.auth_server_service_name
+        desired_count = var.auth_server_desired_count
+
+        container_name = var.auth_server_name
+        container_port = var.auth_server_port
+      }
+    }
+  }
+
+
 }
