@@ -20,7 +20,7 @@ variable "environment" {
   default     = "Dev"
 }
 
-variable "ecs_role" {
+variable "ecs_task_role" {
   description = "The ARN of the ECS role, default to an empty string"
   default     = ""
 }

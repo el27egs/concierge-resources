@@ -108,80 +108,21 @@ resource "aws_ecs_cluster" "ecs_cluster" {
   )
 }
 
-#resource "aws_iam_role" "ecs_role" {
-#  name = local.ecs_role_full_name
-#
-#  assume_role_policy = jsonencode({
-#    Version   = "2012-10-17"
-#    Statement = [
-#      {
-#        Action    = ["sts:AssumeRole"]
-#        Effect    = "Allow"
-#        Principal = {
-#          Service = ["ecs.amazonaws.com"]
-#        }
-#      },
-#    ]
-#  })
-#
-#  inline_policy {
-#    name   = "ecs-service"
-#    policy = jsonencode({
-#      Statement = [
-#        {
-#          Action = [
-#            "ec2:AttachNetworkInterface",
-#            "ec2:CreateNetworkInterface",
-#            "ec2:CreateNetworkInterfacePermission",
-#            "ec2:DeleteNetworkInterface",
-#            "ec2:DeleteNetworkInterfacePermission",
-#            "ec2:Describe*",
-#            "ec2:DetachNetworkInterface",
-#            "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
-#            "elasticloadbalancing:DeregisterTargets",
-#            "elasticloadbalancing:Describe*",
-#            "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
-#            "elasticloadbalancing:RegisterTargets",
-#          ]
-#          Effect   = "Allow"
-#          Resource = "*"
-#        },
-#      ]
-#    })
-#  }
-#
-#  path = "/"
-#
-#  force_detach_policies = true
-#
-#  tags = merge(
-#    { environment = var.environment },
-#    { app_name = var.app_name },
-#
-#    var.default_tags
-#  )
-#}
-
-resource "aws_iam_role" "ecs_role" {
-  name = local.ecs_role_full_name
+resource "aws_iam_role" "ecs_task_role" {
+  name = "ECSTaskRoleS3ReadOnly"
 
   assume_role_policy = jsonencode({
-    Version = "2008-10-17"
+    Version = "2012-10-17",
     Statement = [
       {
-        Action = ["sts:AssumeRole"]
-        Effect = "Allow"
-        Sid    = ""
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
         Principal = {
-          Service = ["ecs.amazonaws.com"]
+          Service = ["ecs-tasks.amazonaws.com"]
         }
-      },
+      }
     ]
   })
-
-  path = "/"
-
-  force_detach_policies = true
 
   tags = merge(
     { environment = var.environment },
@@ -189,17 +130,41 @@ resource "aws_iam_role" "ecs_role" {
 
     var.default_tags
   )
+
 }
 
-data "aws_iam_policy" "managed_ec2_policy" {
-  name = "AmazonEC2ContainerServiceforEC2Role"
+resource "aws_iam_policy" "s3_access_policy" {
+  name        = "${var.app_name}S3ReadAccess"
+  description = "Policy for S3 access"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [
+          "s3:Get*",
+          "s3:List*",
+          "s3:Describe*"
+        ],
+        Effect   = "Allow",
+        Resource = "*",
+      },
+    ],
+  })
+
+  tags = merge(
+    { environment = var.environment },
+    { app_name = var.app_name },
+
+    var.default_tags
+  )
+
 }
 
-resource "aws_iam_role_policy_attachment" "ec2_policy_ecs_role_attach" {
-  role       = aws_iam_role.ecs_role.id
-  policy_arn = data.aws_iam_policy.managed_ec2_policy.arn
+resource "aws_iam_role_policy_attachment" "s3_access_policy_to_task_role_attachment" {
+  role       = aws_iam_role.ecs_task_role.id
+  policy_arn = aws_iam_policy.s3_access_policy.arn
 }
-
 
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = local.ecs_task_execution_role_full_name
@@ -210,17 +175,12 @@ resource "aws_iam_role" "ecs_task_execution_role" {
       {
         Action = ["sts:AssumeRole"]
         Effect = "Allow"
-        Sid    = ""
         Principal = {
           Service = ["ecs-tasks.amazonaws.com"]
         }
       },
     ]
   })
-
-  path = "/"
-
-  force_detach_policies = true
 
   tags = merge(
     { environment = var.environment },
@@ -237,7 +197,6 @@ variable "task_execution_role_policies" {
     "AmazonECSTaskExecutionRolePolicy",
     "AWSAppMeshEnvoyAccess",
     "AWSXRayDaemonWriteAccess",
-    "CloudWatchFullAccess",
     "CloudWatchLogsFullAccess"
   ]
 }

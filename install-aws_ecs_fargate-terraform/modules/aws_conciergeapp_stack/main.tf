@@ -22,7 +22,7 @@ resource "aws_ecs_task_definition" "task_definition" {
   requires_compatibilities = ["FARGATE"]
 
   execution_role_arn = var.ecs_task_execution_role
-  task_role_arn      = length(var.ecs_role) != 0 ? var.ecs_role : null
+  task_role_arn      = length(var.ecs_task_role) != 0 ? var.ecs_task_role : null
 
   container_definitions = jsonencode([
     {
@@ -116,7 +116,14 @@ resource "aws_ecs_service" "ecs_service" {
 
   depends_on = [aws_lb_listener_rule.listener_rule]
 
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
+
   for_each = local.services
+
+  # Configure the service to enable auto scaling
+  enable_ecs_managed_tags = true
 
   name    = local.services[each.key]["ecs_service"]["name"]
   cluster = var.cluster_name
