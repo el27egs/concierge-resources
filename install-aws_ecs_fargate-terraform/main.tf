@@ -1,6 +1,9 @@
 module "aws_network_stack" {
-  source   = "./modules/aws_network_stack"
-  app_name = "ConciergeApp"
+  source = "./modules/aws_network_stack"
+
+  hosted_zone = "starlingapps.com"
+  dns_name    = "concierge"
+  app_name    = "ConciergeApp"
 }
 
 module "aws_conciergeapp_stack" {
@@ -17,7 +20,12 @@ module "aws_conciergeapp_stack" {
   ecs_task_execution_role          = module.aws_network_stack.ecs_task_execution_role
   fargate_instances_security_group = module.aws_network_stack.fargate_instances_security_group
 
-  auth_server_name      = "auth_server"
-  auth_server_image_url = "391361142564.dkr.ecr.us-east-1.amazonaws.com/concierge-auth-server:1.0.1"
+  auth_server_name          = "auth_server"
+  auth_server_rule_priority = 1
+  auth_server_image_url     = "391361142564.dkr.ecr.us-east-1.amazonaws.com/concierge-auth-server:latest"
+
+  app_server_name          = "app_server"
+  app_server_rule_priority = 2
+  app_server_image_url     = "391361142564.dkr.ecr.us-east-1.amazonaws.com/concierge-rds-connect:latest"
 
 }

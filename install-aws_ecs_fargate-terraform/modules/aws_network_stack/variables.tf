@@ -1,10 +1,21 @@
 variable "default_tags" {
   description = "Default tags to add to all resources created inside of this module"
   type        = map(string)
-  default     = {
+  default = {
     module_name    = "aws_network_stack"
     cloud_provider = "AWS"
     iac_tool       = "Terraform"
+  }
+}
+variable "hosted_zone" {
+  description = "Hosted Zone to use to create the alias to reach out it through a DNS, this must be created beforehand"
+  type        = string
+}
+variable "dns_name" {
+  type = string
+  validation {
+    condition     = can(regex("^[a-zA-Z][a-zA-Z0-9-]*$", var.dns_name))
+    error_message = "Invalid DNS name. It should start with a letter and contain only alphanumeric characters and hyphens."
   }
 }
 

@@ -43,7 +43,12 @@ output "public_listener" {
   value       = aws_lb_listener.default_lb_listener.arn
 }
 
-output "external_url" {
+output "balancer_dns_url" {
   description = "The URL of the external load balancer"
   value       = "http://${aws_lb.public_load_balancer.dns_name}"
+}
+
+output "domain_dns_url" {
+  description = "The URL of the domain"
+  value       = "http://${aws_route53_record.auth_server_record.name}"
 }

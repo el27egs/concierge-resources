@@ -26,11 +26,11 @@ resource "aws_ecs_task_definition" "task_definition" {
 
   container_definitions = jsonencode([
     {
-      name         = local.services[each.key]["task_definition"]["name"]
-      image        = local.services[each.key]["task_definition"]["image"]
-      cpu          = local.services[each.key]["task_definition"]["cpu"]
-      memory       = local.services[each.key]["task_definition"]["memory"]
-      essential    = true
+      name      = local.services[each.key]["task_definition"]["name"]
+      image     = local.services[each.key]["task_definition"]["image"]
+      cpu       = local.services[each.key]["task_definition"]["cpu"]
+      memory    = local.services[each.key]["task_definition"]["memory"]
+      essential = true
       portMappings = [
         {
           containerPort = local.services[each.key]["task_definition"]["containerPort"]
@@ -39,7 +39,7 @@ resource "aws_ecs_task_definition" "task_definition" {
       ]
       logConfiguration = {
         logDriver = "awslogs"
-        options   = {
+        options = {
           "awslogs-group"         = aws_cloudwatch_log_group.log_group.name
           "awslogs-region"        = var.region_name
           "awslogs-stream-prefix" = "service"
