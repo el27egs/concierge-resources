@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-declare -a array=("concierge-rds-connect" "concierge-auth-server" "concierge-api-gateway" "concierge-debit-accounts" "concierge-discovery-service" "concierge-user-management")
+declare -a array=("concierge-aws-test" "concierge-auth-server" "concierge-api-gateway" "concierge-debit-accounts" "concierge-discovery-service" "concierge-user-management")
 
 function printMessage(){
   blue=`tput setaf 4`
