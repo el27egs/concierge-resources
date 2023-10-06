@@ -1,7 +1,7 @@
 variable "default_tags" {
   description = "Default tags to add to all resources created inside of this module"
   type        = map(string)
-  default = {
+  default     = {
     module_name    = "aws_network_stack"
     cloud_provider = "AWS"
     iac_tool       = "Terraform"
@@ -116,6 +116,12 @@ variable "auth_server_desired_count" {
   default     = 1
 }
 
+variable "auth_server_max_capacity" {
+  description = "Maximum number of copies of the service task to run, 1' is used as default"
+  type        = number
+  default     = 1
+}
+
 variable "auth_server_rule_priority" {
   description = <<-EOL
   "The priority for the routing rule added to the load balancer.
@@ -148,7 +154,7 @@ variable "app_server_image_url" {
 variable "app_server_port" {
   description = "Default port for the authorization server/service, 8080 is used as default"
   type        = number
-  default     = 8080
+  default     = 8090
 }
 
 variable "app_server_protocol" {
@@ -191,6 +197,12 @@ variable "app_server_desired_count" {
   description = "How many copies of the service task to run, 1' is used as default"
   type        = number
   default     = 2
+}
+
+variable "app_server_max_capacity" {
+  description = "Maximum number of copies of the service task to run, 5' is used as default"
+  type        = number
+  default     = 5
 }
 
 variable "app_server_rule_priority" {
@@ -258,9 +270,9 @@ locals {
         container_name = var.auth_server_name
         container_port = var.auth_server_port
       }
-      policy = {
-        name           = local.app_server_policy_name
-        resource_label = "app/conciergeapp-loadbalancer-dev/8c6e3a6cb813b7cd/targetgroup/auth-server-target-group/1177eabc19b40d63"
+      autoscaling_policy = {
+        min_capacity = var.auth_server_desired_count
+        max_capacity = var.auth_server_max_capacity
       }
     }
 
@@ -296,9 +308,9 @@ locals {
         container_name = var.app_server_name
         container_port = var.app_server_port
       }
-      policy = {
-        name           = local.app_server_policy_name
-        resource_label = "app/conciergeapp-loadbalancer-dev/8c6e3a6cb813b7cd/targetgroup/app-server-target-group/3f1c5e2d7440dfd4"
+      autoscaling_policy = {
+        min_capacity = var.app_server_desired_count
+        max_capacity = var.app_server_max_capacity
       }
     }
 

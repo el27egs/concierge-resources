@@ -26,11 +26,11 @@ resource "aws_ecs_task_definition" "task_definition" {
 
   container_definitions = jsonencode([
     {
-      name      = local.services[each.key]["task_definition"]["name"]
-      image     = local.services[each.key]["task_definition"]["image"]
-      cpu       = local.services[each.key]["task_definition"]["cpu"]
-      memory    = local.services[each.key]["task_definition"]["memory"]
-      essential = true
+      name         = local.services[each.key]["task_definition"]["name"]
+      image        = local.services[each.key]["task_definition"]["image"]
+      cpu          = local.services[each.key]["task_definition"]["cpu"]
+      memory       = local.services[each.key]["task_definition"]["memory"]
+      essential    = true
       portMappings = [
         {
           containerPort = local.services[each.key]["task_definition"]["containerPort"]
@@ -39,7 +39,7 @@ resource "aws_ecs_task_definition" "task_definition" {
       ]
       logConfiguration = {
         logDriver = "awslogs"
-        options = {
+        options   = {
           "awslogs-group"         = aws_cloudwatch_log_group.log_group.name
           "awslogs-region"        = var.region_name
           "awslogs-stream-prefix" = "service"
@@ -162,34 +162,56 @@ resource "aws_ecs_service" "ecs_service" {
 
 }
 
-resource "aws_appautoscaling_target" "replicas" {
+resource "aws_appautoscaling_target" "autoscaling_target" {
 
   for_each = local.services
 
-  max_capacity       = 4
-  min_capacity       = 1
+  max_capacity       = local.services[each.key]["autoscaling_policy"]["max_capacity"]
+  min_capacity       = local.services[each.key]["autoscaling_policy"]["min_capacity"]
   resource_id        = "service/${var.cluster_name}/${aws_ecs_service.ecs_service[each.key].name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 }
 
-resource "aws_appautoscaling_policy" "policy" {
+resource "aws_appautoscaling_policy" "autoscaling_cpu_policy" {
 
   for_each = local.services
 
-  name               = local.services[each.key]["policy"]["name"]
-  service_namespace  = aws_appautoscaling_target.replicas[each.key].service_namespace
-  scalable_dimension = aws_appautoscaling_target.replicas[each.key].scalable_dimension
-  resource_id        = aws_appautoscaling_target.replicas[each.key].resource_id
+  name               = "AutoScalingCPUPolicy"
   policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.autoscaling_target[each.key].resource_id
+  scalable_dimension = aws_appautoscaling_target.autoscaling_target[each.key].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.autoscaling_target[each.key].service_namespace
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
-      predefined_metric_type = "ALBRequestCountPerTarget"
-      resource_label         = local.services[each.key]["policy"]["resource_label"]
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
-    target_value       = 10
-    scale_in_cooldown  = 60
-    scale_out_cooldown = 60
+
+    target_value       = 80
+    scale_in_cooldown  = 10
+    scale_out_cooldown = 10
+  }
+}
+
+
+resource "aws_appautoscaling_policy" "autoscaling_memory_policy" {
+
+  for_each = local.services
+
+  name               = "AutoScalingMemoryPolicy"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.autoscaling_target[each.key].resource_id
+  scalable_dimension = aws_appautoscaling_target.autoscaling_target[each.key].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.autoscaling_target[each.key].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+
+    target_value       = 80
+    scale_in_cooldown  = 10
+    scale_out_cooldown = 10
   }
 }

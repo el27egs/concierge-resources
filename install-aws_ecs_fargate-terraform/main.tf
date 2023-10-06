@@ -27,6 +27,6 @@ module "aws_conciergeapp_stack" {
 
   app_server_name          = "app_server"
   app_server_rule_priority = 2
-  app_server_image_url     = "391361142564.dkr.ecr.us-east-1.amazonaws.com/concierge-rds-connect:latest"
+  app_server_image_url     = "391361142564.dkr.ecr.us-east-1.amazonaws.com/concierge-aws-test:latest"
 
 }
