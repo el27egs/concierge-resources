@@ -117,7 +117,8 @@ resource "aws_ecs_service" "ecs_service" {
   depends_on = [aws_lb_listener_rule.listener_rule]
 
   lifecycle {
-    ignore_changes = [desired_count]
+    ignore_changes        = [desired_count]
+    create_before_destroy = true
   }
 
   for_each = local.services
@@ -159,4 +160,36 @@ resource "aws_ecs_service" "ecs_service" {
     var.default_tags
   )
 
+}
+
+resource "aws_appautoscaling_target" "replicas" {
+
+  for_each = local.services
+
+  max_capacity       = 4
+  min_capacity       = 1
+  resource_id        = "service/${var.cluster_name}/${aws_ecs_service.ecs_service[each.key].name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+resource "aws_appautoscaling_policy" "policy" {
+
+  for_each = local.services
+
+  name               = local.services[each.key]["policy"]["name"]
+  service_namespace  = aws_appautoscaling_target.replicas[each.key].service_namespace
+  scalable_dimension = aws_appautoscaling_target.replicas[each.key].scalable_dimension
+  resource_id        = aws_appautoscaling_target.replicas[each.key].resource_id
+  policy_type        = "TargetTrackingScaling"
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ALBRequestCountPerTarget"
+      resource_label         = local.services[each.key]["policy"]["resource_label"]
+    }
+    target_value       = 10
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 60
+  }
 }

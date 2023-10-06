@@ -213,10 +213,12 @@ variable "app_server_path_pattern" {
 
 locals {
 
+  auth_server_policy_name       = "${var.auth_server_name}_policy"
   auth_server_task_def_name     = "${var.auth_server_name}_task_def"
   auth_server_service_name      = "${var.auth_server_name}_service"
   auth_server_target_group_name = "${replace(var.auth_server_name, "_", "-")}-target-group"
 
+  app_server_policy_name       = "${var.app_server_name}_policy"
   app_server_task_def_name     = "${var.app_server_name}_task_def"
   app_server_service_name      = "${var.app_server_name}_service"
   app_server_target_group_name = "${replace(var.app_server_name, "_", "-")}-target-group"
@@ -256,6 +258,10 @@ locals {
         container_name = var.auth_server_name
         container_port = var.auth_server_port
       }
+      policy = {
+        name           = local.app_server_policy_name
+        resource_label = "app/conciergeapp-loadbalancer-dev/8c6e3a6cb813b7cd/targetgroup/auth-server-target-group/1177eabc19b40d63"
+      }
     }
 
     app_server = {
@@ -289,6 +295,10 @@ locals {
 
         container_name = var.app_server_name
         container_port = var.app_server_port
+      }
+      policy = {
+        name           = local.app_server_policy_name
+        resource_label = "app/conciergeapp-loadbalancer-dev/8c6e3a6cb813b7cd/targetgroup/app-server-target-group/3f1c5e2d7440dfd4"
       }
     }
 
