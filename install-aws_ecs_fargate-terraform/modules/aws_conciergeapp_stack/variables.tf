@@ -1,7 +1,7 @@
 variable "default_tags" {
   description = "Default tags to add to all resources created inside of this module"
   type        = map(string)
-  default = {
+  default     = {
     module_name    = "aws_network_stack"
     cloud_provider = "AWS"
     iac_tool       = "Terraform"
@@ -288,34 +288,34 @@ locals {
     app_server = {
       task_definition = {
         environment = [
-          {
-            name  = "DEBIT_ACCOUNTS_DB_USER",
-            value = aws_db_instance.concierge_db_instance.username
-          },
-          {
-            name  = "DEBIT_ACCOUNTS_DB_PASSWORD",
-            value = aws_db_instance.concierge_db_instance.password
-          },
-          {
-            name  = "DEBIT_ACCOUNTS_DB_NAME",
-            value = aws_db_instance.concierge_db_instance.db_name
-          },
-          {
-            name  = "DEBIT_ACCOUNTS_DB_READ_WRITE_HOST",
-            value = element(split(":", aws_db_instance.concierge_db_instance.endpoint), 0)
-          },
-          {
-            name  = "DEBIT_ACCOUNTS_DB_READ_WRITE_PORT",
-            value = tostring(aws_db_instance.concierge_db_instance.port)
-          },
-          {
-            name  = "DEBIT_ACCOUNTS_DB_READ_ONLY_HOST",
-            value = element(split(":", aws_db_instance.concierge_db_instance.endpoint), 0)
-          },
-          {
-            name  = "DEBIT_ACCOUNTS_DB_READ_ONLY_PORT",
-            value = tostring(aws_db_instance.concierge_db_instance.port)
-          },
+          #          {
+          #            name  = "DEBIT_ACCOUNTS_DB_USER",
+          #            value = aws_db_instance.concierge_db_instance.username
+          #          },
+          #          {
+          #            name  = "DEBIT_ACCOUNTS_DB_PASSWORD",
+          #            value = aws_db_instance.concierge_db_instance.password
+          #          },
+          #          {
+          #            name  = "DEBIT_ACCOUNTS_DB_NAME",
+          #            value = aws_db_instance.concierge_db_instance.db_name
+          #          },
+          #          {
+          #            name  = "DEBIT_ACCOUNTS_DB_READ_WRITE_HOST",
+          #            value = element(split(":", aws_db_instance.concierge_db_instance.endpoint), 0)
+          #          },
+          #          {
+          #            name  = "DEBIT_ACCOUNTS_DB_READ_WRITE_PORT",
+          #            value = tostring(aws_db_instance.concierge_db_instance.port)
+          #          },
+          #          {
+          #            name  = "DEBIT_ACCOUNTS_DB_READ_ONLY_HOST",
+          #            value = element(split(":", aws_db_instance.concierge_db_instance.endpoint), 0)
+          #          },
+          #          {
+          #            name  = "DEBIT_ACCOUNTS_DB_READ_ONLY_PORT",
+          #            value = tostring(aws_db_instance.concierge_db_instance.port)
+          #          },
           {
             name  = "AUTH_URL",
             value = var.domain_dns_url
