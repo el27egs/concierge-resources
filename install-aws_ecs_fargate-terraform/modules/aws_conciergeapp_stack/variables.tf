@@ -1,7 +1,7 @@
 variable "default_tags" {
   description = "Default tags to add to all resources created inside of this module"
   type        = map(string)
-  default     = {
+  default = {
     module_name    = "aws_network_stack"
     cloud_provider = "AWS"
     iac_tool       = "Terraform"
@@ -55,6 +55,10 @@ variable "public_subnet_two" {
 
 variable "fargate_instances_security_group" {
   description = "A security group used to allow Fargate containers to receive traffic"
+}
+
+variable "domain_dns_url" {
+  description = "Domain URL created by network stack"
 }
 
 variable "auth_server_name" {
@@ -164,9 +168,13 @@ variable "app_server_protocol" {
 }
 
 variable "app_server_health_path" {
-  description = "Health path for the authorization server/service, '/app/hello' is used as default"
+  description = <<-EOL
+  "Health path for the authorization server/service, '/app/health' is used as default.
+   Use a different base path for different microservices, those paths are used to route the traffic
+   if the microservices are behind of a load balancer with different target groups."
+  EOL
   type        = string
-  default     = "/app/hello"
+  default     = "/app/health"
 }
 
 variable "app_server_health_interval" {
@@ -240,6 +248,7 @@ locals {
 
     auth_server = {
       task_definition = {
+        environment   = null
         family        = local.auth_server_task_def_name
         cpu           = var.auth_server_cpu
         memory        = var.auth_server_memory
@@ -278,6 +287,44 @@ locals {
 
     app_server = {
       task_definition = {
+        environment = [
+          {
+            name  = "DEBIT_ACCOUNTS_DB_USER",
+            value = aws_db_instance.concierge_db_instance.username
+          },
+          {
+            name  = "DEBIT_ACCOUNTS_DB_PASSWORD",
+            value = aws_db_instance.concierge_db_instance.password
+          },
+          {
+            name  = "DEBIT_ACCOUNTS_DB_NAME",
+            value = aws_db_instance.concierge_db_instance.db_name
+          },
+          {
+            name  = "DEBIT_ACCOUNTS_DB_READ_WRITE_HOST",
+            value = element(split(":", aws_db_instance.concierge_db_instance.endpoint), 0)
+          },
+          {
+            name  = "DEBIT_ACCOUNTS_DB_READ_WRITE_PORT",
+            value = tostring(aws_db_instance.concierge_db_instance.port)
+          },
+          {
+            name  = "DEBIT_ACCOUNTS_DB_READ_ONLY_HOST",
+            value = element(split(":", aws_db_instance.concierge_db_instance.endpoint), 0)
+          },
+          {
+            name  = "DEBIT_ACCOUNTS_DB_READ_ONLY_PORT",
+            value = tostring(aws_db_instance.concierge_db_instance.port)
+          },
+          {
+            name  = "AUTH_URL",
+            value = var.domain_dns_url
+          },
+          {
+            name  = "AUTH_PORT",
+            value = tostring(80)
+          }
+        ]
         family        = local.app_server_task_def_name
         cpu           = var.app_server_cpu
         memory        = var.app_server_memory

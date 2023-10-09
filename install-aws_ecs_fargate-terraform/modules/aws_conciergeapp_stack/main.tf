@@ -12,6 +12,8 @@ resource "aws_cloudwatch_log_group" "log_group" {
 
 resource "aws_ecs_task_definition" "task_definition" {
 
+  #  depends_on = [aws_db_instance.concierge_db_instance]
+
   for_each = local.services
 
   family       = local.services[each.key]["task_definition"]["family"]
@@ -26,25 +28,29 @@ resource "aws_ecs_task_definition" "task_definition" {
 
   container_definitions = jsonencode([
     {
-      name         = local.services[each.key]["task_definition"]["name"]
-      image        = local.services[each.key]["task_definition"]["image"]
-      cpu          = local.services[each.key]["task_definition"]["cpu"]
-      memory       = local.services[each.key]["task_definition"]["memory"]
-      essential    = true
+      name      = local.services[each.key]["task_definition"]["name"]
+      image     = local.services[each.key]["task_definition"]["image"]
+      cpu       = local.services[each.key]["task_definition"]["cpu"]
+      memory    = local.services[each.key]["task_definition"]["memory"]
+      essential = true
       portMappings = [
         {
           containerPort = local.services[each.key]["task_definition"]["containerPort"]
           hostPort      = local.services[each.key]["task_definition"]["hostPort"]
         }
       ]
+
       logConfiguration = {
         logDriver = "awslogs"
-        options   = {
+        options = {
           "awslogs-group"         = aws_cloudwatch_log_group.log_group.name
           "awslogs-region"        = var.region_name
           "awslogs-stream-prefix" = "service"
         }
       }
+
+      environment = local.services[each.key]["task_definition"]["environment"]
+
     }
   ])
 
@@ -194,7 +200,6 @@ resource "aws_appautoscaling_policy" "autoscaling_cpu_policy" {
   }
 }
 
-
 resource "aws_appautoscaling_policy" "autoscaling_memory_policy" {
 
   for_each = local.services
@@ -215,3 +220,98 @@ resource "aws_appautoscaling_policy" "autoscaling_memory_policy" {
     scale_out_cooldown = 10
   }
 }
+
+#resource "aws_security_group" "db_security_group" {
+#
+#  vpc_id = var.vpc_id
+#
+#  name        = "concierge-db-sg"
+#  description = "Concierge DB security group for RDS"
+#
+#}
+#
+#resource "aws_vpc_security_group_ingress_rule" "db_ingress_rule" {
+#  security_group_id = aws_security_group.db_security_group.id
+#
+#  from_port   = 5432
+#  to_port     = 5432
+#  ip_protocol = "tcp"
+#  cidr_ipv4   = "0.0.0.0/0"
+#
+#  tags = merge(
+#    { environment = var.environment },
+#    { app_name = var.app_name },
+#
+#    var.default_tags
+#  )
+#}
+#
+#resource "aws_vpc_security_group_egress_rule" "db_egress_rule" {
+#  security_group_id = aws_security_group.db_security_group.id
+#
+#  from_port   = -1
+#  to_port     = -1
+#  ip_protocol = "-1"
+#  cidr_ipv4   = "0.0.0.0/0"
+#
+#}
+#
+#resource "aws_db_subnet_group" "db_subnet_group_name" {
+#  name       = "main"
+#  subnet_ids = [var.public_subnet_one, var.public_subnet_two]
+#
+#  tags = merge(
+#    { Name = "My DB subnet group" },
+#    { environment = var.environment },
+#    { app_name = var.app_name },
+#
+#    var.default_tags
+#  )
+#
+#}
+#
+#resource "aws_db_instance" "concierge_db_instance" {
+#  allocated_storage               = 20
+#  allow_major_version_upgrade     = false
+#  apply_immediately               = true
+#  backup_retention_period         = 7
+#  db_name                         = "concierge_debit_accounts"
+#  db_subnet_group_name            = aws_db_subnet_group.db_subnet_group_name.name
+#  delete_automated_backups        = true
+#  deletion_protection             = false
+#  enabled_cloudwatch_logs_exports = ["postgresql"]
+#  engine                          = "postgres"
+#  engine_version                  = "14.9"
+#  auto_minor_version_upgrade      = true
+#  identifier                      = "concierge-debit-accounts"
+#  instance_class                  = "db.t3.micro"
+#  multi_az                        = true
+#  parameter_group_name            = "default.postgres14"
+#  password                        = "postgres"
+#  port                            = 5432
+#  publicly_accessible             = true
+#  skip_final_snapshot             = true
+#  storage_type                    = "gp2"
+#  username                        = "postgres"
+#  vpc_security_group_ids          = [aws_security_group.db_security_group.id]
+#
+#  tags = merge(
+#    { environment = var.environment },
+#    { app_name = var.app_name },
+#
+#    var.default_tags
+#  )
+#
+#}
+#
+#resource "aws_db_instance" "concierge_db_instance_replica" {
+#  identifier             = "concierge-debit-accounts-replica"
+#  replicate_source_db    = aws_db_instance.concierge_db_instance.identifier
+#  instance_class         = "db.t3.micro"
+#  apply_immediately      = true
+#  publicly_accessible    = true
+#  skip_final_snapshot    = true
+#  vpc_security_group_ids = [aws_security_group.db_security_group.id]
+#  parameter_group_name   = "default.postgres14"
+#}
+

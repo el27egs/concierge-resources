@@ -20,6 +20,7 @@ module "aws_conciergeapp_stack" {
   ecs_task_execution_role          = module.aws_network_stack.ecs_task_execution_role
   ecs_task_role                    = module.aws_network_stack.ecs_task_role
   fargate_instances_security_group = module.aws_network_stack.fargate_instances_security_group
+  domain_dns_url                   = module.aws_network_stack.domain_dns_url
 
   auth_server_name          = "auth_server"
   auth_server_rule_priority = 1
