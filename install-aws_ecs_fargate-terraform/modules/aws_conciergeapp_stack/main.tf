@@ -35,8 +35,8 @@ resource "aws_ecs_task_definition" "task_definition" {
       essential = true
       portMappings = [
         {
-          containerPort = local.services[each.key]["task_definition"]["containerPort"]
-          hostPort      = local.services[each.key]["task_definition"]["hostPort"]
+          containerPort = local.services[each.key]["task_definition"]["container_port"]
+          hostPort      = local.services[each.key]["task_definition"]["host_port"]
         }
       ]
 
@@ -118,6 +118,31 @@ resource "aws_lb_listener_rule" "listener_rule" {
 
 }
 
+resource "aws_service_discovery_private_dns_namespace" "private_namespace" {
+  name = local.namespace_name
+  vpc  = var.vpc_id
+}
+
+resource "aws_service_discovery_service" "discovery_service_instance" {
+
+  for_each = local.services
+
+  name = local.services[each.key]["task_definition"]["name"]
+
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.private_namespace.id
+    dns_records {
+      ttl  = 60
+      type = "A"
+    }
+  }
+
+  health_check_custom_config {
+    failure_threshold = 10
+  }
+
+}
+
 resource "aws_ecs_service" "ecs_service" {
 
   depends_on = [aws_lb_listener_rule.listener_rule]
@@ -155,8 +180,13 @@ resource "aws_ecs_service" "ecs_service" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.target_group[each.key].arn
-    container_name   = local.services[each.key]["ecs_service"]["container_name"]
-    container_port   = local.services[each.key]["ecs_service"]["container_port"]
+    container_name   = local.services[each.key]["task_definition"]["container_name"]
+    container_port   = local.services[each.key]["task_definition"]["container_port"]
+  }
+
+  service_registries {
+    registry_arn   = aws_service_discovery_service.discovery_service_instance[each.key].arn
+    container_name = local.services[each.key]["task_definition"]["container_name"]
   }
 
   tags = merge(

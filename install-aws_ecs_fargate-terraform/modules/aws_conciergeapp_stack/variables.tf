@@ -1,7 +1,7 @@
 variable "default_tags" {
   description = "Default tags to add to all resources created inside of this module"
   type        = map(string)
-  default     = {
+  default = {
     module_name    = "aws_network_stack"
     cloud_provider = "AWS"
     iac_tool       = "Terraform"
@@ -233,6 +233,8 @@ variable "app_server_path_pattern" {
 
 locals {
 
+  namespace_name = "${lower(var.app_name)}.${lower(var.environment)}"
+
   auth_server_policy_name       = "${var.auth_server_name}_policy"
   auth_server_task_def_name     = "${var.auth_server_name}_task_def"
   auth_server_service_name      = "${var.auth_server_name}_service"
@@ -248,15 +250,15 @@ locals {
 
     auth_server = {
       task_definition = {
-        environment   = null
-        family        = local.auth_server_task_def_name
-        cpu           = var.auth_server_cpu
-        memory        = var.auth_server_memory
-        name          = var.auth_server_name
-        image         = var.auth_server_image_url
-        containerPort = var.auth_server_port
-        hostPort      = var.auth_server_port
-
+        environment    = null
+        family         = local.auth_server_task_def_name
+        cpu            = var.auth_server_cpu
+        memory         = var.auth_server_memory
+        image          = var.auth_server_image_url
+        name           = replace(var.auth_server_name, "_", "-")
+        container_name = replace(var.auth_server_name, "_", "-")
+        container_port = var.auth_server_port
+        host_port      = var.auth_server_port
       }
       target_group = {
         name     = local.auth_server_target_group_name
@@ -275,9 +277,6 @@ locals {
       ecs_service = {
         name          = local.auth_server_service_name
         desired_count = var.auth_server_desired_count
-
-        container_name = var.auth_server_name
-        container_port = var.auth_server_port
       }
       autoscaling_policy = {
         min_capacity = var.auth_server_desired_count
@@ -318,21 +317,21 @@ locals {
           #          },
           {
             name  = "AUTH_URL",
-            value = var.domain_dns_url
+            value = "http://auth-server.conciergeapp.dev"
           },
           {
             name  = "AUTH_PORT",
-            value = tostring(80)
+            value = tostring(8080)
           }
         ]
-        family        = local.app_server_task_def_name
-        cpu           = var.app_server_cpu
-        memory        = var.app_server_memory
-        name          = var.app_server_name
-        image         = var.app_server_image_url
-        containerPort = var.app_server_port
-        hostPort      = var.app_server_port
-
+        family         = local.app_server_task_def_name
+        cpu            = var.app_server_cpu
+        memory         = var.app_server_memory
+        image          = var.app_server_image_url
+        name           = replace(var.app_server_name, "_", "-")
+        container_name = replace(var.app_server_name, "_", "-")
+        container_port = var.app_server_port
+        host_port      = var.app_server_port
       }
       target_group = {
         name     = local.app_server_target_group_name
@@ -351,9 +350,6 @@ locals {
       ecs_service = {
         name          = local.app_server_service_name
         desired_count = var.app_server_desired_count
-
-        container_name = var.app_server_name
-        container_port = var.app_server_port
       }
       autoscaling_policy = {
         min_capacity = var.app_server_desired_count
