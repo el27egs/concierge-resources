@@ -1,10 +1,10 @@
 data "aws_region" "current_region" {}
 
-data "aws_availability_zones" "available" {
+data "aws_availability_zones" "availability_zones" {
   state = "available"
 }
 
-resource "aws_vpc" "fargate_vpc" {
+resource "aws_vpc" "vpc" {
   enable_dns_support   = true
   enable_dns_hostnames = true
 
@@ -18,10 +18,11 @@ resource "aws_vpc" "fargate_vpc" {
   )
 }
 
-resource "aws_subnet" "public_subnet_one" {
-  availability_zone       = data.aws_availability_zones.available.names[0]
-  vpc_id                  = aws_vpc.fargate_vpc.id
-  cidr_block              = local.mappings["SubnetConfig"]["PublicOne"]["CIDR"]
+resource "aws_subnet" "public_subnets" {
+  count                   = local.number_az
+  availability_zone       = data.aws_availability_zones.availability_zones.names[count.index]
+  vpc_id                  = aws_vpc.vpc.id
+  cidr_block              = cidrsubnet(aws_vpc.vpc.cidr_block, 8, count.index)
   map_public_ip_on_launch = true
 
   tags = merge(
@@ -31,16 +32,18 @@ resource "aws_subnet" "public_subnet_one" {
 
     var.default_tags
   )
+
 }
 
-resource "aws_subnet" "public_subnet_two" {
-  availability_zone       = data.aws_availability_zones.available.names[1]
-  vpc_id                  = aws_vpc.fargate_vpc.id
-  cidr_block              = local.mappings["SubnetConfig"]["PublicTwo"]["CIDR"]
-  map_public_ip_on_launch = true
+resource "aws_subnet" "private_subnets" {
+  count                   = local.number_az
+  availability_zone       = data.aws_availability_zones.availability_zones.names[count.index]
+  vpc_id                  = aws_vpc.vpc.id
+  cidr_block              = cidrsubnet(aws_vpc.vpc.cidr_block, 8, local.number_az + count.index)
+  map_public_ip_on_launch = false
 
   tags = merge(
-    { Name = local.subnet_two_full_name },
+    { Name = local.subnet_one_full_name },
     { environment = var.environment },
     { app_name = var.app_name },
 
@@ -60,11 +63,11 @@ resource "aws_internet_gateway" "internet_gateway" {
 
 resource "aws_internet_gateway_attachment" "gateway_attachment" {
   internet_gateway_id = aws_internet_gateway.internet_gateway.id
-  vpc_id              = aws_vpc.fargate_vpc.id
+  vpc_id              = aws_vpc.vpc.id
 }
 
 resource "aws_route_table" "public_route_table" {
-  vpc_id = aws_vpc.fargate_vpc.id
+  vpc_id = aws_vpc.vpc.id
 
   tags = merge(
     { Name = local.public_route_table_full_name },
@@ -75,6 +78,8 @@ resource "aws_route_table" "public_route_table" {
   )
 }
 
+# TODO Create a private route using nateway instead of igw, and create the nat gw and associate to public
+# subnet
 resource "aws_route" "public_route" {
   route_table_id         = aws_route_table.public_route_table.id
   destination_cidr_block = "0.0.0.0/0"
@@ -82,13 +87,10 @@ resource "aws_route" "public_route" {
   depends_on             = [aws_route_table.public_route_table]
 }
 
-resource "aws_route_table_association" "public_subnet_one_route_table_association" {
-  subnet_id      = aws_subnet.public_subnet_one.id
-  route_table_id = aws_route_table.public_route_table.id
-}
-
-resource "aws_route_table_association" "public_subnet_two_route_table_association" {
-  subnet_id      = aws_subnet.public_subnet_two.id
+# TODO create a private association
+resource "aws_route_table_association" "public_subnet_route_table_assoc" {
+  count          = length(aws_subnet.public_subnets)
+  subnet_id      = aws_subnet.public_subnets[count.index].id
   route_table_id = aws_route_table.public_route_table.id
 }
 
@@ -108,7 +110,7 @@ resource "aws_ecs_cluster" "ecs_cluster" {
   )
 }
 
-resource "aws_iam_role" "ecs_task_role" {
+resource "aws_iam_role" "task_role" {
   name = "ECSTaskRoleS3ReadOnly"
 
   assume_role_policy = jsonencode({
@@ -161,12 +163,12 @@ resource "aws_iam_policy" "s3_access_policy" {
 
 }
 
-resource "aws_iam_role_policy_attachment" "s3_access_policy_to_task_role_attachment" {
-  role       = aws_iam_role.ecs_task_role.id
+resource "aws_iam_role_policy_attachment" "s3_policy_to_task_role_attach" {
+  role       = aws_iam_role.task_role.id
   policy_arn = aws_iam_policy.s3_access_policy.arn
 }
 
-resource "aws_iam_role" "ecs_task_execution_role" {
+resource "aws_iam_role" "task_execution_role" {
   name = local.ecs_task_execution_role_full_name
 
   assume_role_policy = jsonencode({
@@ -190,34 +192,23 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   )
 }
 
-variable "task_execution_role_policies" {
-  description = "Policies"
-  type        = set(string)
-  default = [
-    "AmazonECSTaskExecutionRolePolicy",
-    "AWSAppMeshEnvoyAccess",
-    "AWSXRayDaemonWriteAccess",
-    "CloudWatchLogsFullAccess"
-  ]
-}
-
 data "aws_iam_policy" "task_execution_role_policies" {
-  for_each = var.task_execution_role_policies
+  for_each = var.task_execution_policy_set
   name     = each.value
 }
 
-resource "aws_iam_role_policy_attachment" "policies_to_task_execution_role_attach" {
+resource "aws_iam_role_policy_attachment" "policies_for_task_execution_role_attach" {
   depends_on = [data.aws_iam_policy.task_execution_role_policies]
 
-  for_each   = var.task_execution_role_policies
-  role       = aws_iam_role.ecs_task_execution_role.id
+  for_each   = var.task_execution_policy_set
+  role       = aws_iam_role.task_execution_role.id
   policy_arn = data.aws_iam_policy.task_execution_role_policies[each.key].arn
 }
 
 resource "aws_security_group" "load_balancer_security_group" {
   name = local.sg_lb_full_name
 
-  vpc_id = aws_vpc.fargate_vpc.id
+  vpc_id = aws_vpc.vpc.id
 
   ingress {
     from_port   = 0
@@ -242,12 +233,12 @@ resource "aws_security_group" "load_balancer_security_group" {
   )
 }
 
-resource "aws_security_group" "fargate_instances_security_group" {
+resource "aws_security_group" "containers_sg" {
   name   = local.sg_fargate_instances_full_name
-  vpc_id = aws_vpc.fargate_vpc.id
+  vpc_id = aws_vpc.vpc.id
 
   tags = merge(
-    { Description = "Allow traffic from fargate containers to fargate containers" },
+    { Description = "Allow traffic from container to container inside ecs cluster" },
     { environment = var.environment },
     { app_name = var.app_name },
 
@@ -255,10 +246,10 @@ resource "aws_security_group" "fargate_instances_security_group" {
   )
 }
 
-resource "aws_vpc_security_group_ingress_rule" "ingress_traffic_from_lb_sg_ingress_rule" {
+resource "aws_vpc_security_group_ingress_rule" "traffic_from_lb_sg_ingress_rule" {
 
   referenced_security_group_id = aws_security_group.load_balancer_security_group.id
-  security_group_id            = aws_security_group.fargate_instances_security_group.id
+  security_group_id            = aws_security_group.containers_sg.id
 
 
   from_port   = -1
@@ -274,10 +265,10 @@ resource "aws_vpc_security_group_ingress_rule" "ingress_traffic_from_lb_sg_ingre
 
 }
 
-resource "aws_vpc_security_group_ingress_rule" "ingress_traffic_from_self_sg_ingress_rule" {
+resource "aws_vpc_security_group_ingress_rule" "traffic_from_sg_self_ingress_rule" {
 
-  referenced_security_group_id = aws_security_group.fargate_instances_security_group.id
-  security_group_id            = aws_security_group.fargate_instances_security_group.id
+  referenced_security_group_id = aws_security_group.containers_sg.id
+  security_group_id            = aws_security_group.containers_sg.id
 
   from_port   = -1
   to_port     = -1
@@ -291,8 +282,8 @@ resource "aws_vpc_security_group_ingress_rule" "ingress_traffic_from_self_sg_ing
   )
 }
 
-resource "aws_vpc_security_group_ingress_rule" "ingress_traffic_for_admin_ingress_rule" {
-  security_group_id = aws_security_group.fargate_instances_security_group.id
+resource "aws_vpc_security_group_ingress_rule" "traffic_for_8080_port_ingress_rule" {
+  security_group_id = aws_security_group.containers_sg.id
 
   from_port   = 8080
   to_port     = 8080
@@ -309,7 +300,7 @@ resource "aws_vpc_security_group_ingress_rule" "ingress_traffic_for_admin_ingres
 
 
 resource "aws_vpc_security_group_egress_rule" "public_traffic_egress_rule" {
-  security_group_id = aws_security_group.fargate_instances_security_group.id
+  security_group_id = aws_security_group.containers_sg.id
 
   from_port   = -1
   to_port     = -1
@@ -323,7 +314,8 @@ resource "aws_lb" "public_load_balancer" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.load_balancer_security_group.id]
-  subnets            = [aws_subnet.public_subnet_one.id, aws_subnet.public_subnet_two.id]
+  # TODO No se si tengo que agregar los suberes privadas, revisar
+  subnets = [for subnet in aws_subnet.public_subnets : subnet.id]
 
   tags = merge(
     { environment = var.environment },
@@ -337,7 +329,7 @@ resource "aws_lb_target_group" "default_target_group" {
   name     = local.default_target_group_full_name
   port     = 80
   protocol = "HTTP"
-  vpc_id   = aws_vpc.fargate_vpc.id
+  vpc_id   = aws_vpc.vpc.id
 
   health_check {
     interval            = 6
@@ -381,7 +373,7 @@ data "aws_route53_zone" "hosted_zone" {
   name = var.hosted_zone
 }
 
-resource "aws_route53_record" "auth_server_record" {
+resource "aws_route53_record" "default_dsn_alias_record" {
   zone_id = data.aws_route53_zone.hosted_zone.zone_id
   name    = "${var.dns_name}.${data.aws_route53_zone.hosted_zone.name}"
   type    = "A"

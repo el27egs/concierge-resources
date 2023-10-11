@@ -1,4 +1,4 @@
-resource "aws_cloudwatch_log_group" "log_group" {
+resource "aws_cloudwatch_log_group" "app_log_group" {
   name = "/ecs/fargate/${var.app_name}"
 
   tags = merge(
@@ -23,8 +23,8 @@ resource "aws_ecs_task_definition" "task_definition" {
 
   requires_compatibilities = ["FARGATE"]
 
-  execution_role_arn = var.ecs_task_execution_role
-  task_role_arn      = length(var.ecs_task_role) != 0 ? var.ecs_task_role : null
+  execution_role_arn = var.task_execution_role_arn
+  task_role_arn      = length(var.task_role_arn) != 0 ? var.task_role_arn : null
 
   container_definitions = jsonencode([
     {
@@ -43,7 +43,7 @@ resource "aws_ecs_task_definition" "task_definition" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.log_group.name
+          "awslogs-group"         = aws_cloudwatch_log_group.app_log_group.name
           "awslogs-region"        = var.region_name
           "awslogs-stream-prefix" = "service"
         }
@@ -95,7 +95,7 @@ resource "aws_lb_listener_rule" "listener_rule" {
 
   for_each = local.services
 
-  listener_arn = var.public_listener
+  listener_arn = var.default_lb_listener_arn
   priority     = local.services[each.key]["listener_rule"]["priority"]
 
   action {
@@ -121,6 +121,14 @@ resource "aws_lb_listener_rule" "listener_rule" {
 resource "aws_service_discovery_private_dns_namespace" "private_namespace" {
   name = local.namespace_name
   vpc  = var.vpc_id
+
+  tags = merge(
+    { environment = var.environment },
+    { app_name = var.app_name },
+
+    var.default_tags
+  )
+
 }
 
 resource "aws_service_discovery_service" "discovery_service_instance" {
@@ -140,6 +148,13 @@ resource "aws_service_discovery_service" "discovery_service_instance" {
   health_check_custom_config {
     failure_threshold = 10
   }
+
+  tags = merge(
+    { environment = var.environment },
+    { app_name = var.app_name },
+
+    var.default_tags
+  )
 
 }
 
@@ -172,8 +187,9 @@ resource "aws_ecs_service" "ecs_service" {
 
   network_configuration {
     assign_public_ip = true
-    subnets          = [var.public_subnet_one, var.public_subnet_two]
-    security_groups  = [var.fargate_instances_security_group]
+    subnets          = var.subnet_ids
+
+    security_groups = [var.containers_security_group_id]
   }
 
   task_definition = aws_ecs_task_definition.task_definition[each.key].arn
@@ -251,17 +267,24 @@ resource "aws_appautoscaling_policy" "autoscaling_memory_policy" {
   }
 }
 
-#resource "aws_security_group" "db_security_group" {
+#resource "aws_security_group" "database_sg" {
 #
 #  vpc_id = var.vpc_id
 #
-#  name        = "concierge-db-sg"
-#  description = "Concierge DB security group for RDS"
+#  name = local.database_sg_full_name
+#
+#  tags = merge(
+#    { Description = "Database security group" },
+#    { environment = var.environment },
+#    { app_name = var.app_name },
+#
+#    var.default_tags
+#  )
 #
 #}
 #
 #resource "aws_vpc_security_group_ingress_rule" "db_ingress_rule" {
-#  security_group_id = aws_security_group.db_security_group.id
+#  security_group_id = aws_security_group.database_sg.id
 #
 #  from_port   = 5432
 #  to_port     = 5432
@@ -277,7 +300,7 @@ resource "aws_appautoscaling_policy" "autoscaling_memory_policy" {
 #}
 #
 #resource "aws_vpc_security_group_egress_rule" "db_egress_rule" {
-#  security_group_id = aws_security_group.db_security_group.id
+#  security_group_id = aws_security_group.database_sg.id
 #
 #  from_port   = -1
 #  to_port     = -1
@@ -288,10 +311,9 @@ resource "aws_appautoscaling_policy" "autoscaling_memory_policy" {
 #
 #resource "aws_db_subnet_group" "db_subnet_group_name" {
 #  name       = "main"
-#  subnet_ids = [var.public_subnet_one, var.public_subnet_two]
+#  subnet_ids = var.subnet_ids
 #
 #  tags = merge(
-#    { Name = "My DB subnet group" },
 #    { environment = var.environment },
 #    { app_name = var.app_name },
 #
@@ -323,7 +345,7 @@ resource "aws_appautoscaling_policy" "autoscaling_memory_policy" {
 #  skip_final_snapshot             = true
 #  storage_type                    = "gp2"
 #  username                        = "postgres"
-#  vpc_security_group_ids          = [aws_security_group.db_security_group.id]
+#  vpc_security_group_ids          = [aws_security_group.database_sg.id]
 #
 #  tags = merge(
 #    { environment = var.environment },
@@ -341,7 +363,15 @@ resource "aws_appautoscaling_policy" "autoscaling_memory_policy" {
 #  apply_immediately      = true
 #  publicly_accessible    = true
 #  skip_final_snapshot    = true
-#  vpc_security_group_ids = [aws_security_group.db_security_group.id]
+#  vpc_security_group_ids = [aws_security_group.database_sg.id]
 #  parameter_group_name   = "default.postgres14"
+#
+#  tags = merge(
+#    { environment = var.environment },
+#    { app_name = var.app_name },
+#
+#    var.default_tags
+#  )
+#
 #}
-
+#

@@ -11,6 +11,7 @@ variable "hosted_zone" {
   description = "Hosted Zone to use to create the alias to reach out it through a DNS, this must be created beforehand"
   type        = string
 }
+
 variable "dns_name" {
   type = string
   validation {
@@ -20,15 +21,15 @@ variable "dns_name" {
 }
 
 variable "app_name" {
-  description = "Target application name, the default value is 'aws_network_stack'"
+  description = "Target application name, the default value is 'aws-network-stack'"
   type        = string
-  default     = "aws_network_stack"
+  default     = "aws-network-stack"
 }
 
 variable "environment" {
   description = "Environment name to use the resources"
   type        = string
-  default     = "Dev"
+  default     = "dev"
 }
 
 variable "vpc_cidr_block" {
@@ -55,27 +56,33 @@ locals {
       VPC = {
         CIDR = var.vpc_cidr_block
       }
-      PublicOne = {
-        CIDR = var.subnet_one_cidr_block
-      }
-      PublicTwo = {
-        CIDR = var.subnet_two_cidr_block
-      }
     }
   }
 
-  vpc_full_name                     = "${var.app_name}-VPC-${var.environment}"
-  subnet_one_full_name              = "${var.app_name}-SubnetOne-${var.environment}"
-  subnet_two_full_name              = "${var.app_name}-SubnetTwo-${var.environment}"
-  internet_gw_full_name             = "${var.app_name}-Internet_GW-${var.environment}"
-  public_route_table_full_name      = "${var.app_name}-PublicRouteTable-${var.environment}"
-  ecs_cluster_full_name             = "${var.app_name}-ECSCluster-${var.environment}"
-  ecs_role_full_name                = "${var.app_name}-ECSRole-${var.environment}"
-  ecs_task_execution_role_full_name = "${var.app_name}-ECSTaskExecutionRole-${var.environment}"
-  sg_lb_full_name                   = "${var.app_name}-SG_LoadBalancer-${var.environment}"
-  sg_fargate_instances_full_name    = "${var.app_name}-SG_FargateInstances-${var.environment}"
-  load_balancer_full_name           = "${var.app_name}-LoadBalancer-${var.environment}"
-  default_target_group_full_name    = lower("${var.app_name}-target-group-${var.environment}")
-  default_lb_listener_full_name     = "${var.app_name}-LB_Listener-${var.environment}"
+  number_az = length(data.aws_availability_zones.availability_zones.names)
 
+  vpc_full_name                     = "${var.app_name}-vpc-${var.environment}"
+  subnet_one_full_name              = "${var.app_name}-subnet-${var.environment}"
+  internet_gw_full_name             = "${var.app_name}-internet-gw-${var.environment}"
+  public_route_table_full_name      = "${var.app_name}-route-table-${var.environment}"
+  ecs_cluster_full_name             = "${var.app_name}-ecs-cluster-${var.environment}"
+  ecs_role_full_name                = "${var.app_name}-ecs-role-${var.environment}"
+  ecs_task_execution_role_full_name = "${var.app_name}-task-exec-role-${var.environment}"
+  sg_lb_full_name                   = "${var.app_name}-load-blancer-sg-${var.environment}"
+  sg_fargate_instances_full_name    = "${var.app_name}-container-sg-${var.environment}"
+  load_balancer_full_name           = "${var.app_name}-load-balancer-${var.environment}"
+  default_target_group_full_name    = lower("${var.app_name}-target-group-${var.environment}")
+  default_lb_listener_full_name     = "${var.app_name}-lb-Listener-${var.environment}"
+
+}
+
+variable "task_execution_policy_set" {
+  description = "Policies"
+  type        = set(string)
+  default = [
+    "AmazonECSTaskExecutionRolePolicy",
+    "AWSAppMeshEnvoyAccess",
+    "AWSXRayDaemonWriteAccess",
+    "CloudWatchLogsFullAccess"
+  ]
 }

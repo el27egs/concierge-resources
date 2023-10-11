@@ -5,22 +5,17 @@ output "region_name" {
 
 output "vpc_id" {
   description = "The ID of the vpc that this stack is deployed on"
-  value       = aws_vpc.fargate_vpc.id
+  value       = aws_vpc.vpc.id
 }
 
-output "public_subnet_one" {
-  description = "Public subnet one"
-  value       = aws_subnet.public_subnet_one.id
+output "subnet_ids" {
+  description = "Ids for all subnets used for the network stack"
+  value       = aws_subnet.public_subnets[*].id
 }
 
-output "public_subnet_two" {
-  description = "Public subnet two"
-  value       = aws_subnet.public_subnet_two.id
-}
-
-output "fargate_instances_security_group" {
+output "containers_security_group_id" {
   description = "A security group used to allow Fargate containers to receive traffic"
-  value       = aws_security_group.fargate_instances_security_group.id
+  value       = aws_security_group.containers_sg.id
 }
 
 output "cluster_name" {
@@ -28,17 +23,17 @@ output "cluster_name" {
   value       = aws_ecs_cluster.ecs_cluster.name
 }
 
-output "ecs_task_role" {
-  description = "The ARN of the ECS role"
-  value       = aws_iam_role.ecs_task_role.arn
+output "task_role_arn" {
+  description = "The ARN of the IAM role"
+  value       = aws_iam_role.task_role.arn
 }
 
-output "ecs_task_execution_role" {
+output "task_execution_role_arn" {
   description = "The ARN of the ECS task execution role"
-  value       = aws_iam_role.ecs_task_execution_role.arn
+  value       = aws_iam_role.task_execution_role.arn
 }
 
-output "public_listener" {
+output "default_lb_listener_arn" {
   description = "The ARN of the public load balancer's listener"
   value       = aws_lb_listener.default_lb_listener.arn
 }
@@ -50,5 +45,5 @@ output "balancer_dns_url" {
 
 output "domain_dns_url" {
   description = "The URL of the domain"
-  value       = "http://${aws_route53_record.auth_server_record.name}"
+  value       = "http://${aws_route53_record.default_dsn_alias_record.name}"
 }

@@ -8,24 +8,32 @@ variable "default_tags" {
   }
 }
 
+variable "dns_name" {
+  type = string
+  validation {
+    condition     = can(regex("^[a-zA-Z][a-zA-Z0-9-]*$", var.dns_name))
+    error_message = "Invalid DNS name. It should start with a letter and contain only alphanumeric characters and hyphens."
+  }
+}
+
 variable "app_name" {
-  description = "Target application name, the default value is 'conciergeapp'"
+  description = "Target application name, the default value is 'aws-conciergeapp-stack'"
   type        = string
-  default     = "conciergeapp"
+  default     = "aws-conciergeapp-stack"
 }
 
 variable "environment" {
   description = "Environment name to use the resources"
   type        = string
-  default     = "Dev"
+  default     = "dev"
 }
 
-variable "ecs_task_role" {
+variable "task_role_arn" {
   description = "The ARN of the ECS role, default to an empty string"
   default     = ""
 }
 
-variable "ecs_task_execution_role" {
+variable "task_execution_role_arn" {
   description = "The ARN of the ECS task execution role"
 }
 
@@ -37,23 +45,19 @@ variable "vpc_id" {
   description = "The ID of the vpc that this stack is deployed on"
 }
 
-variable "public_listener" {
-  description = "The ARN of the public lister of load balancer"
+variable "default_lb_listener_arn" {
+  description = "The ARN of the default lister of load balancer"
 }
 
 variable "cluster_name" {
   description = "The name of the ECS cluster"
 }
 
-variable "public_subnet_one" {
-  description = "Public subnet one"
+variable "subnet_ids" {
+  description = "Ids for all subnets created/used by network stack"
 }
 
-variable "public_subnet_two" {
-  description = "Public subnet two"
-}
-
-variable "fargate_instances_security_group" {
+variable "containers_security_group_id" {
   description = "A security group used to allow Fargate containers to receive traffic"
 }
 
@@ -62,9 +66,9 @@ variable "domain_dns_url" {
 }
 
 variable "auth_server_name" {
-  description = "The name for the authorization server/service, 'auth_server' is used as default"
+  description = "The name for the authorization server/service, 'auth-server' is used as default"
   type        = string
-  default     = "auth_server"
+  default     = "auth-server"
 }
 
 variable "auth_server_image_url" {
@@ -145,9 +149,9 @@ variable "auth_server_path_pattern" {
 }
 
 variable "app_server_name" {
-  description = "The name for the authorization server/service, 'app_server' is used as default"
+  description = "The name for the authorization server/service, 'app-server' is used as default"
   type        = string
-  default     = "app_server"
+  default     = "app-server"
 }
 
 variable "app_server_image_url" {
@@ -233,7 +237,9 @@ variable "app_server_path_pattern" {
 
 locals {
 
-  namespace_name = "${lower(var.app_name)}.${lower(var.environment)}"
+  namespace_name = "${lower(var.dns_name)}.${lower(var.environment)}"
+
+  database_sg_full_name = "${var.app_name}-database-sg-${var.environment}"
 
   auth_server_policy_name       = "${var.auth_server_name}_policy"
   auth_server_task_def_name     = "${var.auth_server_name}_task_def"
@@ -317,11 +323,11 @@ locals {
           #          },
           {
             name  = "AUTH_URL",
-            value = "http://auth-server.conciergeapp.dev"
+            value = "http://${var.auth_server_name}.${local.namespace_name}"
           },
           {
             name  = "AUTH_PORT",
-            value = tostring(8080)
+            value = tostring(var.auth_server_port)
           }
         ]
         family         = local.app_server_task_def_name

@@ -1,3 +1,7 @@
+output "aws_network_stack_output" {
+  value = module.aws_network_stack
+}
+
 output "balancer_dns_url" {
   description = "The URL of the external load balancer"
   value       = module.aws_network_stack.balancer_dns_url
