@@ -60,7 +60,7 @@ locals {
     }
   }
 
-  number_az = length(data.aws_availability_zones.availability_zones.names)
+  number_az = length(slice(data.aws_availability_zones.availability_zones.names, 0, 2))
 
   app_name_snake_case = join("", [for word in split("-", var.app_name) : title(word)])
 

@@ -78,13 +78,12 @@ resource "aws_route_table" "public_route_table" {
   )
 }
 
-# TODO Create a private route using nateway instead of igw, and create the nat gw and associate to public
-# subnet
+# TODO Create a private route, route table and association to use NAT gateay
+# with private subnets
 resource "aws_route" "public_route" {
   route_table_id         = aws_route_table.public_route_table.id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.internet_gateway.id
-  depends_on             = [aws_route_table.public_route_table]
 }
 
 # TODO create a private association
@@ -198,8 +197,6 @@ data "aws_iam_policy" "task_execution_role_policies" {
 }
 
 resource "aws_iam_role_policy_attachment" "policies_for_task_execution_role_attach" {
-  depends_on = [data.aws_iam_policy.task_execution_role_policies]
-
   for_each   = var.task_execution_policy_set
   role       = aws_iam_role.task_execution_role.id
   policy_arn = data.aws_iam_policy.task_execution_role_policies[each.key].arn
@@ -349,8 +346,6 @@ resource "aws_lb_target_group" "default_target_group" {
 }
 
 resource "aws_lb_listener" "default_lb_listener" {
-
-  depends_on = [aws_lb.public_load_balancer]
 
   load_balancer_arn = aws_lb.public_load_balancer.arn
   port              = "80"

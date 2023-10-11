@@ -12,6 +12,7 @@ resource "aws_cloudwatch_log_group" "app_log_group" {
 
 resource "aws_ecs_task_definition" "task_definition" {
 
+  #  # TODO Enable when database resources are enabled, otherwise comment this line
   #  depends_on = [aws_db_instance.concierge_db_instance]
 
   for_each = local.services
@@ -267,61 +268,61 @@ resource "aws_appautoscaling_policy" "autoscaling_memory_policy" {
   }
 }
 
-#resource "aws_security_group" "database_sg" {
-#
-#  vpc_id = var.vpc_id
-#
-#  name = local.database_sg_full_name
-#
-#  tags = merge(
-#    { Description = "Database security group" },
-#    { environment = var.environment },
-#    { app_name = var.app_name },
-#
-#    var.default_tags
-#  )
-#
-#}
-#
-#resource "aws_vpc_security_group_ingress_rule" "db_ingress_rule" {
-#  security_group_id = aws_security_group.database_sg.id
-#
-#  from_port   = 5432
-#  to_port     = 5432
-#  ip_protocol = "tcp"
-#  cidr_ipv4   = "0.0.0.0/0"
-#
-#  tags = merge(
-#    { environment = var.environment },
-#    { app_name = var.app_name },
-#
-#    var.default_tags
-#  )
-#}
-#
-#resource "aws_vpc_security_group_egress_rule" "db_egress_rule" {
-#  security_group_id = aws_security_group.database_sg.id
-#
-#  from_port   = -1
-#  to_port     = -1
-#  ip_protocol = "-1"
-#  cidr_ipv4   = "0.0.0.0/0"
-#
-#}
-#
-#resource "aws_db_subnet_group" "db_subnet_group_name" {
-#  name       = "main"
-#  subnet_ids = var.subnet_ids
-#
-#  tags = merge(
-#    { environment = var.environment },
-#    { app_name = var.app_name },
-#
-#    var.default_tags
-#  )
-#
-#}
-#
+resource "aws_security_group" "database_sg" {
+
+  vpc_id = var.vpc_id
+
+  name = local.database_sg_full_name
+
+  tags = merge(
+    { Description = "Database security group" },
+    { environment = var.environment },
+    { app_name = var.app_name },
+
+    var.default_tags
+  )
+
+}
+
+resource "aws_vpc_security_group_ingress_rule" "db_ingress_rule" {
+  security_group_id = aws_security_group.database_sg.id
+
+  from_port   = 5432
+  to_port     = 5432
+  ip_protocol = "tcp"
+  cidr_ipv4   = "0.0.0.0/0"
+
+  tags = merge(
+    { environment = var.environment },
+    { app_name = var.app_name },
+
+    var.default_tags
+  )
+}
+
+resource "aws_vpc_security_group_egress_rule" "db_egress_rule" {
+  security_group_id = aws_security_group.database_sg.id
+
+  from_port   = -1
+  to_port     = -1
+  ip_protocol = "-1"
+  cidr_ipv4   = "0.0.0.0/0"
+
+}
+
+resource "aws_db_subnet_group" "db_subnet_group_name" {
+  name       = "main"
+  subnet_ids = var.subnet_ids
+
+  tags = merge(
+    { environment = var.environment },
+    { app_name = var.app_name },
+
+    var.default_tags
+  )
+
+}
+
 #resource "aws_db_instance" "concierge_db_instance" {
 #  allocated_storage               = 20
 #  allow_major_version_upgrade     = false
