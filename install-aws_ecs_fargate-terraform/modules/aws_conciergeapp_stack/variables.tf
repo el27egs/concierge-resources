@@ -244,12 +244,12 @@ locals {
   auth_server_policy_name       = "${var.auth_server_name}_policy"
   auth_server_task_def_name     = "${var.auth_server_name}_task_def"
   auth_server_service_name      = "${var.auth_server_name}_service"
-  auth_server_target_group_name = "${replace(var.auth_server_name, "_", "-")}-target-group"
+  auth_server_target_group_name = lower("${replace(var.auth_server_name, "_", "-")}-target-group-${var.environment}")
 
   app_server_policy_name       = "${var.app_server_name}_policy"
   app_server_task_def_name     = "${var.app_server_name}_task_def"
   app_server_service_name      = "${var.app_server_name}_service"
-  app_server_target_group_name = "${replace(var.app_server_name, "_", "-")}-target-group"
+  app_server_target_group_name = lower("${replace(var.app_server_name, "_", "-")}-target-group-${var.environment}")
 
 
   services = {

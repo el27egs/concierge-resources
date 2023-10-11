@@ -111,7 +111,7 @@ resource "aws_ecs_cluster" "ecs_cluster" {
 }
 
 resource "aws_iam_role" "task_role" {
-  name = "ECSTaskRoleS3ReadOnly"
+  name = "${local.app_name_snake_case}DefaultTaskRole"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -136,7 +136,7 @@ resource "aws_iam_role" "task_role" {
 }
 
 resource "aws_iam_policy" "s3_access_policy" {
-  name        = "${var.app_name}S3ReadAccess"
+  name        = "${local.app_name_snake_case}S3ReadAccessPolicy"
   description = "Policy for S3 access"
 
   policy = jsonencode({
@@ -169,7 +169,7 @@ resource "aws_iam_role_policy_attachment" "s3_policy_to_task_role_attach" {
 }
 
 resource "aws_iam_role" "task_execution_role" {
-  name = local.ecs_task_execution_role_full_name
+  name = "${local.app_name_snake_case}DefaultTaskExecutionRole"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

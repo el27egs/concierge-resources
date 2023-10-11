@@ -26,6 +26,7 @@ variable "app_name" {
   default     = "aws-network-stack"
 }
 
+
 variable "environment" {
   description = "Environment name to use the resources"
   type        = string
@@ -61,18 +62,18 @@ locals {
 
   number_az = length(data.aws_availability_zones.availability_zones.names)
 
-  vpc_full_name                     = "${var.app_name}-vpc-${var.environment}"
-  subnet_one_full_name              = "${var.app_name}-subnet-${var.environment}"
-  internet_gw_full_name             = "${var.app_name}-internet-gw-${var.environment}"
-  public_route_table_full_name      = "${var.app_name}-route-table-${var.environment}"
-  ecs_cluster_full_name             = "${var.app_name}-ecs-cluster-${var.environment}"
-  ecs_role_full_name                = "${var.app_name}-ecs-role-${var.environment}"
-  ecs_task_execution_role_full_name = "${var.app_name}-task-exec-role-${var.environment}"
-  sg_lb_full_name                   = "${var.app_name}-load-blancer-sg-${var.environment}"
-  sg_fargate_instances_full_name    = "${var.app_name}-container-sg-${var.environment}"
-  load_balancer_full_name           = "${var.app_name}-load-balancer-${var.environment}"
-  default_target_group_full_name    = lower("${var.app_name}-target-group-${var.environment}")
-  default_lb_listener_full_name     = "${var.app_name}-lb-Listener-${var.environment}"
+  app_name_snake_case = join("", [for word in split("-", var.app_name) : title(word)])
+
+  vpc_full_name                  = "${var.app_name}-vpc-${var.environment}"
+  subnet_one_full_name           = "${var.app_name}-subnet-${var.environment}"
+  internet_gw_full_name          = "${var.app_name}-internet-gw-${var.environment}"
+  public_route_table_full_name   = "${var.app_name}-route-table-${var.environment}"
+  ecs_cluster_full_name          = "${var.app_name}-ecs-cluster-${var.environment}"
+  sg_lb_full_name                = "${var.app_name}-load-blancer-sg-${var.environment}"
+  sg_fargate_instances_full_name = "${var.app_name}-container-sg-${var.environment}"
+  load_balancer_full_name        = "${var.app_name}-load-balancer-${var.environment}"
+  default_target_group_full_name = lower("default-target-group-${var.environment}")
+  default_lb_listener_full_name  = "${var.app_name}-lb-Listener-${var.environment}"
 
 }
 
