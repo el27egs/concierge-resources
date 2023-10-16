@@ -432,22 +432,14 @@ resource "aws_lb_listener" "http_80_listener" {
   protocol          = "HTTP"
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.default_target_group.arn
+    type = "redirect"
 
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
   }
-  #  TODO Enable this when keycloak upgrade version, now is triggering an issue on reading
-  #  keycloak.js from http when it uses https in the login page, therefore UI is not accessible from browser.
-  #
-  #  default_action {
-  #    type = "redirect"
-  #
-  #    redirect {
-  #      port        = "443"
-  #      protocol    = "HTTPS"
-  #      status_code = "HTTP_301"
-  #    }
-  #  }
 
   tags = merge(
     { environment = var.environment },

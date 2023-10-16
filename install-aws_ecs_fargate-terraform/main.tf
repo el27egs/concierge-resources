@@ -28,7 +28,7 @@ module "aws_conciergeapp_stack" {
 
   auth_server_name          = "auth-server"
   auth_server_rule_priority = 1
-  auth_server_image_url     = "391361142564.dkr.ecr.us-east-1.amazonaws.com/concierge-auth-server:latest"
+  auth_server_image_url     = "391361142564.dkr.ecr.us-east-1.amazonaws.com/concierge-auth-server:https"
 
   app_server_name          = "app-server"
   app_server_rule_priority = 2
