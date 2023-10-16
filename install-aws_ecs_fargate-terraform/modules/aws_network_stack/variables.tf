@@ -12,6 +12,11 @@ variable "hosted_zone" {
   type        = string
 }
 
+variable "certificate_domain_name" {
+  description = "Certificate for domain name to use for the application"
+  type        = string
+}
+
 variable "dns_name" {
   type = string
   validation {

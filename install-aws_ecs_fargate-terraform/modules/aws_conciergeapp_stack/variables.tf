@@ -45,8 +45,12 @@ variable "vpc_id" {
   description = "The ID of the vpc that this stack is deployed on"
 }
 
-variable "default_lb_listener_arn" {
-  description = "The ARN of the default lister of load balancer"
+variable "http_80_listener_arn" {
+  description = "The ARN for http port 80"
+}
+
+variable "https_443_listener_arn" {
+  description = "The ARN for https port 443"
 }
 
 variable "cluster_name" {

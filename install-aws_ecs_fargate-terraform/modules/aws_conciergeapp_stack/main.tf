@@ -96,7 +96,11 @@ resource "aws_lb_listener_rule" "listener_rule" {
 
   for_each = local.services
 
-  listener_arn = var.default_lb_listener_arn
+  #  TODO Enable this when keycloak upgrade version, now is triggering an issue on reading
+  #  keycloak.js from http when it uses https in the login page, therefore UI is not accessible from browser.
+  #  listener_arn = var.https_443_listener_arn
+
+  listener_arn = var.http_80_listener_arn
   priority     = local.services[each.key]["listener_rule"]["priority"]
 
   action {

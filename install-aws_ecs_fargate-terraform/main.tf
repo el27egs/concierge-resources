@@ -1,9 +1,10 @@
 module "aws_network_stack" {
   source = "./modules/aws_network_stack"
 
-  hosted_zone = "starlingapps.com"
-  dns_name    = "concierge"
-  app_name    = "concierge-app"
+  hosted_zone             = "starlingapps.com"
+  certificate_domain_name = "*.starlingapps.com"
+  dns_name                = "concierge"
+  app_name                = "concierge-app"
 }
 
 module "aws_conciergeapp_stack" {
@@ -16,7 +17,8 @@ module "aws_conciergeapp_stack" {
 
   region_name                  = module.aws_network_stack.region_name
   vpc_id                       = module.aws_network_stack.vpc_id
-  default_lb_listener_arn      = module.aws_network_stack.default_lb_listener_arn
+  http_80_listener_arn         = module.aws_network_stack.http_80_listener_arn
+  https_443_listener_arn       = module.aws_network_stack.https_443_listener_arn
   cluster_name                 = module.aws_network_stack.cluster_name
   subnet_ids                   = module.aws_network_stack.subnet_ids
   task_execution_role_arn      = module.aws_network_stack.task_execution_role_arn

@@ -35,9 +35,14 @@ output "task_execution_role_arn" {
   value       = aws_iam_role.task_execution_role.arn
 }
 
-output "default_lb_listener_arn" {
-  description = "The ARN of the public load balancer's listener"
-  value       = aws_lb_listener.default_lb_listener.arn
+output "http_80_listener_arn" {
+  description = "The ARN for http lister for port 80"
+  value       = aws_lb_listener.http_80_listener.arn
+}
+
+output "https_443_listener_arn" {
+  description = "The ARN for https lister for port 443"
+  value       = aws_lb_listener.https_443_listener.arn
 }
 
 output "balancer_dns_url" {

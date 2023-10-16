@@ -4,6 +4,13 @@ data "aws_availability_zones" "availability_zones" {
   state = "available"
 }
 
+data "aws_acm_certificate" "domain_certificate" {
+  domain      = var.certificate_domain_name
+  statuses    = ["ISSUED"]
+  types       = ["AMAZON_ISSUED"]
+  most_recent = true
+}
+
 resource "aws_vpc" "vpc" {
   enable_dns_support   = true
   enable_dns_hostnames = true
@@ -291,9 +298,16 @@ resource "aws_security_group" "load_balancer_security_group" {
   vpc_id = aws_vpc.vpc.id
 
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -377,7 +391,7 @@ resource "aws_lb" "public_load_balancer" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.load_balancer_security_group.id]
-  # TODO No se si tengo que agregar los suberes privadas, revisar
+  # Use private or public subnets according your needs
   subnets = [for subnet in aws_subnet.public_subnets : subnet.id]
 
   tags = merge(
@@ -411,7 +425,7 @@ resource "aws_lb_target_group" "default_target_group" {
   )
 }
 
-resource "aws_lb_listener" "default_lb_listener" {
+resource "aws_lb_listener" "http_80_listener" {
 
   load_balancer_arn = aws_lb.public_load_balancer.arn
   port              = "80"
@@ -420,6 +434,44 @@ resource "aws_lb_listener" "default_lb_listener" {
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.default_target_group.arn
+
+  }
+  #  TODO Enable this when keycloak upgrade version, now is triggering an issue on reading
+  #  keycloak.js from http when it uses https in the login page, therefore UI is not accessible from browser.
+  #
+  #  default_action {
+  #    type = "redirect"
+  #
+  #    redirect {
+  #      port        = "443"
+  #      protocol    = "HTTPS"
+  #      status_code = "HTTP_301"
+  #    }
+  #  }
+
+  tags = merge(
+    { environment = var.environment },
+    { app_name = var.app_name },
+
+    var.default_tags
+  )
+}
+
+resource "aws_lb_listener" "https_443_listener" {
+
+  load_balancer_arn = aws_lb.public_load_balancer.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  certificate_arn   = data.aws_acm_certificate.domain_certificate.arn
+
+  default_action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Fixed response content"
+      status_code  = "200"
+    }
   }
 
   tags = merge(
