@@ -65,9 +65,15 @@ locals {
   app_name_snake_case = join("", [for word in split("-", var.app_name) : title(word)])
 
   vpc_full_name                  = "${var.app_name}-vpc-${var.environment}"
-  subnet_one_full_name           = "${var.app_name}-subnet-${var.environment}"
+  public_subnet_full_name        = "${var.app_name}-public-subnet-${var.environment}"
+  private_subnet_full_name       = "${var.app_name}-private-subnet-${var.environment}"
+  db_subnet_full_name            = "${var.app_name}-db-subnet-${var.environment}"
   internet_gw_full_name          = "${var.app_name}-internet-gw-${var.environment}"
-  public_route_table_full_name   = "${var.app_name}-route-table-${var.environment}"
+  private_eip_full_name          = "${var.app_name}-private_eip-${var.environment}"
+  nat_gateway_full_name          = "${var.app_name}-nat_gateway-${var.environment}"
+  public_route_table_full_name   = "${var.app_name}-public-route-table-${var.environment}"
+  private_route_table_full_name  = "${var.app_name}-private-route-table-${var.environment}"
+  db_route_table_full_name       = "${var.app_name}-db-route-table-${var.environment}"
   ecs_cluster_full_name          = "${var.app_name}-ecs-cluster-${var.environment}"
   sg_lb_full_name                = "${var.app_name}-load-blancer-sg-${var.environment}"
   sg_fargate_instances_full_name = "${var.app_name}-container-sg-${var.environment}"

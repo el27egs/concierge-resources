@@ -10,7 +10,9 @@ output "vpc_id" {
 
 output "subnet_ids" {
   description = "Ids for all subnets used for the network stack"
-  value       = aws_subnet.public_subnets[*].id
+  #  Es posible mover las instancias a las subredes privadas sin problema
+  #  value       = aws_subnet.private_subnets[*].id
+  value = aws_subnet.public_subnets[*].id
 }
 
 output "containers_security_group_id" {

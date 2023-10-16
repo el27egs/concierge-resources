@@ -26,7 +26,7 @@ resource "aws_subnet" "public_subnets" {
   map_public_ip_on_launch = true
 
   tags = merge(
-    { Name = local.subnet_one_full_name },
+    { Name = local.public_subnet_full_name },
     { environment = var.environment },
     { app_name = var.app_name },
 
@@ -39,11 +39,27 @@ resource "aws_subnet" "private_subnets" {
   count                   = local.number_az
   availability_zone       = data.aws_availability_zones.availability_zones.names[count.index]
   vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = cidrsubnet(aws_vpc.vpc.cidr_block, 8, local.number_az + count.index)
+  cidr_block              = cidrsubnet(aws_vpc.vpc.cidr_block, 8, (1 * local.number_az) + count.index)
   map_public_ip_on_launch = false
 
   tags = merge(
-    { Name = local.subnet_one_full_name },
+    { Name = local.private_subnet_full_name },
+    { environment = var.environment },
+    { app_name = var.app_name },
+
+    var.default_tags
+  )
+}
+
+resource "aws_subnet" "db_subnets" {
+  count                   = local.number_az
+  availability_zone       = data.aws_availability_zones.availability_zones.names[count.index]
+  vpc_id                  = aws_vpc.vpc.id
+  cidr_block              = cidrsubnet(aws_vpc.vpc.cidr_block, 8, (2 * local.number_az) + count.index)
+  map_public_ip_on_launch = false
+
+  tags = merge(
+    { Name = local.db_subnet_full_name },
     { environment = var.environment },
     { app_name = var.app_name },
 
@@ -66,6 +82,34 @@ resource "aws_internet_gateway_attachment" "gateway_attachment" {
   vpc_id              = aws_vpc.vpc.id
 }
 
+resource "aws_eip" "private_eip" {
+  tags = merge(
+    { Name = local.private_eip_full_name },
+    { environment = var.environment },
+    { app_name = var.app_name },
+
+    var.default_tags
+  )
+
+}
+
+resource "aws_nat_gateway" "private_nat_gateway" {
+
+  depends_on = [aws_internet_gateway.internet_gateway]
+
+  allocation_id = aws_eip.private_eip.id
+  subnet_id     = aws_subnet.public_subnets[0].id
+
+  tags = merge(
+    { Name = local.nat_gateway_full_name },
+    { environment = var.environment },
+    { app_name = var.app_name },
+
+    var.default_tags
+  )
+
+}
+
 resource "aws_route_table" "public_route_table" {
   vpc_id = aws_vpc.vpc.id
 
@@ -78,19 +122,58 @@ resource "aws_route_table" "public_route_table" {
   )
 }
 
-# TODO Create a private route, route table and association to use NAT gateay
-# with private subnets
+resource "aws_route_table" "private_route_table" {
+  vpc_id = aws_vpc.vpc.id
+
+  tags = merge(
+    { Name = local.private_route_table_full_name },
+    { environment = var.environment },
+    { app_name = var.app_name },
+
+    var.default_tags
+  )
+}
+
+resource "aws_route_table" "db_route_table" {
+  vpc_id = aws_vpc.vpc.id
+
+  tags = merge(
+    { Name = local.db_route_table_full_name },
+    { environment = var.environment },
+    { app_name = var.app_name },
+
+    var.default_tags
+  )
+}
+
 resource "aws_route" "public_route" {
   route_table_id         = aws_route_table.public_route_table.id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.internet_gateway.id
 }
 
-# TODO create a private association
+resource "aws_route" "private_route" {
+  route_table_id         = aws_route_table.private_route_table.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.private_nat_gateway.id
+}
+
 resource "aws_route_table_association" "public_subnet_route_table_assoc" {
   count          = length(aws_subnet.public_subnets)
   subnet_id      = aws_subnet.public_subnets[count.index].id
   route_table_id = aws_route_table.public_route_table.id
+}
+
+resource "aws_route_table_association" "private_subnet_route_table_assoc" {
+  count          = length(aws_subnet.private_subnets)
+  subnet_id      = aws_subnet.private_subnets[count.index].id
+  route_table_id = aws_route_table.private_route_table.id
+}
+
+resource "aws_route_table_association" "db_subnet_route_table_assoc" {
+  count          = length(aws_subnet.db_subnets)
+  subnet_id      = aws_subnet.db_subnets[count.index].id
+  route_table_id = aws_route_table.db_route_table.id
 }
 
 resource "aws_ecs_cluster" "ecs_cluster" {
@@ -278,23 +361,6 @@ resource "aws_vpc_security_group_ingress_rule" "traffic_from_sg_self_ingress_rul
     var.default_tags
   )
 }
-
-resource "aws_vpc_security_group_ingress_rule" "traffic_for_8080_port_ingress_rule" {
-  security_group_id = aws_security_group.containers_sg.id
-
-  from_port   = 8080
-  to_port     = 8080
-  ip_protocol = "tcp"
-  cidr_ipv4   = "0.0.0.0/0"
-
-  tags = merge(
-    { environment = var.environment },
-    { app_name = var.app_name },
-
-    var.default_tags
-  )
-}
-
 
 resource "aws_vpc_security_group_egress_rule" "public_traffic_egress_rule" {
   security_group_id = aws_security_group.containers_sg.id
