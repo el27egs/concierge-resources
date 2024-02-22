@@ -5,7 +5,7 @@ RUN echo 'deb http://archive.canonical.com/ubuntu focal partner' >> /etc/apt/sou
 RUN echo 'deb-src http://archive.canonical.com/ubuntu focal partner' >> /etc/apt/sources.list
 
 RUN apt-get update && apt-get upgrade -y 
-RUN apt-get install -y openjdk-17-jre
+RUN apt-get install -y openjdk-21-jre
 RUN apt-get install -y wget
 RUN apt-get install -y iputils-ping
 
