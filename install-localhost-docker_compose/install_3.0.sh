@@ -40,7 +40,7 @@ do
             jenv global 1.8            
                   
             if [ $validDir == "concierge-debit-accounts_SP3" ]; then
-              jenv global 17
+              jenv global 21
             fi
 
             java -version
