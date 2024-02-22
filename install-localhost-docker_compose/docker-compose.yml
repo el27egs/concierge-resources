@@ -14,17 +14,17 @@ services:
       - db-server-vol:/var/lib/postgresql/data
 
   auth-server:
-    image: ngineapps/concierge-auth-server:0.0.1-20240221-141306
+    image: ngineapps/concierge-auth-server:0.0.1-20240221-201519
     ports:
       - "8080:8080"
 
   discovery-server:
-    image: ngineapps/concierge-discovery-service:0.0.1-20240221-141306
+    image: ngineapps/concierge-discovery-service:0.0.1-20240221-201519
     ports:
       - "8018:8018"
 
   gateway-server:
-    image: ngineapps/concierge-api-gateway:0.0.1-20240221-141306
+    image: ngineapps/concierge-api-gateway:0.0.1-20240221-201519
     environment:
       - DEFAULT_ZONE=http://discovery-server:8018/eureka/
     ports:
@@ -33,7 +33,7 @@ services:
       - discovery-server
 
   debit-accounts:
-    image: ngineapps/concierge-debit-accounts:0.0.1-20240221-141306
+    image: ngineapps/concierge-debit-accounts:0.0.1-20240221-201519
     environment:
       - DEBIT_ACCOUNTS_DB_USER=postgres
       - DEBIT_ACCOUNTS_DB_PASSWORD=postgres
@@ -47,7 +47,7 @@ services:
       - ISSUER_URI=http://auth-server:8080/auth/realms/concierge
       #- ISSUER_URI=http://concierge.starlingapps.com/auth/realms/concierge
       # Use this to build auth-server image: frontendUrl" : "http://auth-server.starlingapps.com/auth"
-      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=5000,server=y,suspend=n
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=*:5000,server=y,suspend=n
     depends_on:
       - auth-server
       - db-server
@@ -63,7 +63,7 @@ services:
       start_period: 10s
 
   user-management:
-    image: ngineapps/concierge-user-management:0.0.1-20240221-141306
+    image: ngineapps/concierge-user-management:0.0.1-20240221-201519
     environment:
       - USER_MANAGEMENT_DB_USER=postgres
       - USER_MANAGEMENT_DB_PASSWORD=postgres
@@ -76,7 +76,7 @@ services:
       - GATEWAY_URL=http://gateway-server:8008
       - ISSUER_URI=http://auth-server:8080/auth/realms/concierge
       #- ISSUER_URI=http://concierge.starlingapps.com/auth/realms/concierge
-      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=5001,server=y,suspend=n
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=*:5001,server=y,suspend=n
     depends_on:
       - auth-server
       - db-server
@@ -92,7 +92,7 @@ services:
       start_period: 10s
 
   aws_test:
-    image: ngineapps/concierge-aws-tes:0.0.1-20240221-141306
+    image: ngineapps/concierge-aws-tes:0.0.1-20240221-201519
     ports:
       - "8090:8090"
 
