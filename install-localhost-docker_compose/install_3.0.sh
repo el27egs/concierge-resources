@@ -39,7 +39,7 @@ do
 
             jenv global 1.8            
                   
-            if [ $validDir == "concierge-debit-accounts_SP3" ]; then
+            if [[ $validDir == "concierge-debit-accounts_SP3" || $validDir == "concierge-api-gateway" ]]; then
               jenv global 21
             fi
 
