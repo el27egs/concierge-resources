@@ -37,11 +37,14 @@ do
 
       if [ -f "$entry/pom.xml" ]; then
 
+
             jenv global 1.8            
                   
-            if [[ $validDir == "concierge-debit-accounts_SP3" || $validDir == "concierge-api-gateway" ]]; then
+            if [[ $validDir == "concierge-debit-accounts_SP3" || $validDir == "concierge-api-gateway" || $validDir == "concierge-user-management" ]]; then
               jenv global 21
             fi
+            
+	    printMessage $validDir
 
             java -version
 
