@@ -13,18 +13,23 @@ services:
     volumes:
       - db-server-vol:/var/lib/postgresql/data
 
+  zipkin-server:
+    image: openzipkin/zipkin
+    ports:
+      - "9411:9411"
+
   auth-server:
-    image: ngineapps/concierge-auth-server:0.0.1-20241018-154831
+    image: ngineapps/concierge-auth-server:0.0.1-20241019-075446
     ports:
       - "8080:8080"
 
   discovery-server:
-    image: ngineapps/concierge-discovery-service:0.0.1-20241018-154831
+    image: ngineapps/concierge-discovery-service:0.0.1-20241019-075446
     ports:
       - "8018:8018"
 
   gateway-server:
-    image: ngineapps/concierge-api-gateway:0.0.1-20241018-154831
+    image: ngineapps/concierge-api-gateway:0.0.1-20241019-075446
     environment:
       - DEFAULT_ZONE=http://discovery-server:8018/eureka/
     ports:
@@ -33,7 +38,7 @@ services:
       - discovery-server
 
   debit-accounts:
-    image: ngineapps/concierge-debit-accounts:0.0.1-20241018-154831
+    image: ngineapps/concierge-debit-accounts:0.0.1-20241019-075446
     environment:
       - DEBIT_ACCOUNTS_DB_USER=postgres
       - DEBIT_ACCOUNTS_DB_PASSWORD=postgres
@@ -63,7 +68,7 @@ services:
       start_period: 10s
 
   user-management:
-    image: ngineapps/concierge-user-management:0.0.1-20241018-154831
+    image: ngineapps/concierge-user-management:0.0.1-20241019-075446
     environment:
       - USER_MANAGEMENT_DB_USER=postgres
       - USER_MANAGEMENT_DB_PASSWORD=postgres
